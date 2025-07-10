@@ -307,7 +307,7 @@ export default function ExpandedRowActions<T extends { id: string }>({
         <ProductDetailsModal
           open={detailsOpen}
           onClose={() => setDetailsOpen(false)}
-          productId={(row as WithId)._id || (row as WithId).id || ''}
+          product={{ id: (row as WithId)._id || (row as WithId).id || '' }}
         />
       )}
     </>

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { Product } from '@/types/product';
+import { Product } from '../types/product';
 
 interface CartItem {
   product: Product;
@@ -87,7 +87,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 };
 
 const calculateCartTotals = (items: CartItem[]): CartState => {
-  const total = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const total = items.reduce((sum, item) => sum + ((item.product.price ?? 0) * item.quantity), 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   
   return {

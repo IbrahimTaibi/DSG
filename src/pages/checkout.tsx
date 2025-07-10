@@ -362,7 +362,7 @@ const CheckoutPage: NextPage = () => {
                         className="font-medium"
                         style={{ color: currentTheme.text.primary }}
                       >
-                        ${(item.product.price * item.quantity).toFixed(2)}
+                        {((item.product.price ?? 0) * item.quantity).toFixed(2)}
                       </span>
                     </div>
                   ))}

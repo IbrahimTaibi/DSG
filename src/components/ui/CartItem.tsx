@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { useCart } from '@/contexts/CartContext';
 import { useDarkMode } from '@/contexts/DarkModeContext';
 import { Minus, Plus, X } from 'lucide-react';
-import { Product } from '@/types/product';
+import { Product } from '../../types/product';
 
 interface CartItemProps {
   product: Product;
@@ -16,11 +16,11 @@ export const CartItem: React.FC<CartItemProps> = ({ product, quantity }) => {
   const [imageError, setImageError] = useState(false);
 
   const handleQuantityChange = (newQuantity: number) => {
-    updateQuantity(product._id, newQuantity);
+    updateQuantity(product.id, newQuantity);
   };
 
   const handleRemove = () => {
-    removeItem(product._id);
+    removeItem(product._id || product.id);
   };
 
   return (
@@ -84,7 +84,7 @@ export const CartItem: React.FC<CartItemProps> = ({ product, quantity }) => {
           className="text-sm font-medium"
           style={{ color: currentTheme.text.primary }}
         >
-          ${product.price.toFixed(2)}
+          ${(product.price ?? 0).toFixed(2)}
         </p>
       </div>
 
@@ -140,7 +140,7 @@ export const CartItem: React.FC<CartItemProps> = ({ product, quantity }) => {
           className="text-sm font-medium"
           style={{ color: currentTheme.text.primary }}
         >
-          ${(product.price * quantity).toFixed(2)}
+          {((product.price ?? 0) * quantity).toFixed(2)}
         </p>
       </div>
 

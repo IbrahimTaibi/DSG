@@ -16,12 +16,35 @@ interface CategoryItemProps {
   expandedCategories: Set<string>;
 }
 
-const CategoryItem: React.FC<CategoryItemProps> = React.memo(({
+const buildCategoryPath = (category: CategoryTree, tree: CategoryTree[]): string[] => {
+  // Recursively find the path from root to this category
+  let path: string[] = [];
+  function traverse(nodes: CategoryTree[], targetId: string, acc: string[]): boolean {
+    for (const node of nodes) {
+      if (node._id === targetId) {
+        acc.push(node.slug);
+        return true;
+      }
+      if (node.children.length > 0) {
+        if (traverse(node.children, targetId, acc)) {
+          acc.unshift(node.slug);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  traverse(tree, category._id, path);
+  return path;
+};
+
+const CategoryItem: React.FC<CategoryItemProps & { tree: CategoryTree[] }> = React.memo(({
   category,
   level,
   activeCategory,
   onToggle,
   expandedCategories,
+  tree,
 }) => {
   const { currentTheme } = useDarkMode();
   const router = useRouter();
@@ -38,7 +61,8 @@ const CategoryItem: React.FC<CategoryItemProps> = React.memo(({
   };
 
   const handleClick = () => {
-    router.push(`/category/${category.slug}`);
+    const fullPath = buildCategoryPath(category, tree);
+    router.push(`/category/${fullPath.join('/')}`);
   };
 
   const itemStyles = useMemo(() => ({
@@ -111,6 +135,7 @@ const CategoryItem: React.FC<CategoryItemProps> = React.memo(({
               activeCategory={activeCategory}
               onToggle={onToggle}
               expandedCategories={expandedCategories}
+              tree={tree}
             />
           ))}
         </div>
@@ -286,6 +311,20 @@ const CategorySidebar: React.FC<CategorySidebarProps> = React.memo(({
           
           {/* Categories list */}
           <div className="flex-1 overflow-y-auto">
+            {/* Tous les produits link */}
+            <div
+              className={`flex items-center py-3 px-4 rounded-xl transition-all duration-200 cursor-pointer mb-2 ${
+                router.asPath === '/category/all' ? 'font-semibold shadow-sm' : 'hover:font-medium'
+              }`}
+              style={{
+                color: router.asPath === '/category/all' ? currentTheme.text.inverse : currentTheme.text.primary,
+                backgroundColor: router.asPath === '/category/all' ? currentTheme.interactive.primary : 'transparent',
+              }}
+              onClick={() => router.push('/category/all')}
+              role="button"
+            >
+              <span className="flex-1 truncate text-sm">Tous les produits</span>
+            </div>
             {categoryTree.length === 0 ? (
               <div
                 className="text-center py-8"
@@ -316,6 +355,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = React.memo(({
                     activeCategory={activeCategory}
                     onToggle={handleToggle}
                     expandedCategories={expandedCategories}
+                    tree={categoryTree}
                   />
                 ))}
               </div>

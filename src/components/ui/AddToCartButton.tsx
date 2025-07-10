@@ -24,7 +24,8 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const currentQuantity = getItemQuantity(product._id);
+  // Use _id if available, otherwise fallback to id
+  const currentQuantity = getItemQuantity(product._id || product.id);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.stopPropagation();
