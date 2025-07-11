@@ -7,18 +7,24 @@ import { ShoppingCart } from 'lucide-react';
 interface CartIconProps {
   className?: string;
   showCount?: boolean;
+  onClick?: () => void;
 }
 
 export const CartIcon: React.FC<CartIconProps> = ({ 
   className = '', 
-  showCount = true 
+  showCount = true,
+  onClick
 }) => {
   const { state } = useCart();
   const { currentTheme } = useDarkMode();
   const router = useRouter();
 
   const handleClick = () => {
-    router.push('/cart');
+    if (onClick) {
+      onClick();
+    } else {
+      router.push('/cart');
+    }
   };
 
   return (

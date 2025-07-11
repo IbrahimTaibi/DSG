@@ -10,6 +10,7 @@ interface AddToCartButtonProps {
   variant?: 'primary' | 'secondary' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   onClick?: (e: React.MouseEvent) => void;
+  customLabel?: string;
 }
 
 export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
@@ -18,6 +19,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   variant = 'primary',
   size = 'md',
   onClick,
+  customLabel,
 }) => {
   const { addItem, getItemQuantity } = useCart();
   const { currentTheme } = useDarkMode();
@@ -93,12 +95,18 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       {showSuccess ? (
         <>
           <Check className="w-4 h-4" />
-          Added!
+          Ajouté !
         </>
       ) : (
         <>
           <ShoppingCart className="w-4 h-4" />
-          {isAdding ? 'Adding...' : currentQuantity > 0 ? `Add More (${currentQuantity})` : 'Add to Cart'}
+          {customLabel
+            ? customLabel
+            : isAdding
+            ? 'Adding...'
+            : currentQuantity > 0
+            ? `Add More (${currentQuantity})`
+            : 'Add to Cart'}
         </>
       )}
     </button>

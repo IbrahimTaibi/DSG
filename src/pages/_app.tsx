@@ -11,6 +11,7 @@ import Footer from "../components/layout/Footer";
 import CategoryNavBar from "../components/category/CategoryNavBar";
 import SidebarLayout from "../components/layout/SidebarLayout";
 import PageTransition from "../components/ui/PageTransition";
+import CartDrawer from "../components/ui/CartDrawer";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import TopProgressBar from "../components/ui/TopProgressBar";
@@ -24,7 +25,6 @@ const AppLayout = React.memo(function AppLayout({ Component, pageProps }: AppPro
   const [isLight, setIsLight] = useState(false);
   const { isLoading } = useAuth();
   const { isTransitioning } = usePageTransition();
-
   // Memoize styles to prevent recreation on every render
   const mainContainerStyles = useMemo(() => ({
     display: "flex" as const,
@@ -107,6 +107,7 @@ const AppLayout = React.memo(function AppLayout({ Component, pageProps }: AppPro
         </main>
         <Footer />
         <BottomNavBar />
+        <CartDrawer />
       </div>
     </>
   );

@@ -5,6 +5,7 @@ import { useDarkMode } from "../../../contexts/DarkModeContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useCart } from "../../../contexts/CartContext";
 import { ShoppingCart } from "lucide-react";
+
 import axios from "axios";
 import { useEffect, useState } from "react";
 
@@ -14,6 +15,7 @@ export default function BottomNavBar() {
   const { state: cartState } = useCart();
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
+
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -41,8 +43,17 @@ export default function BottomNavBar() {
   }, [user]);
 
   const isLoggedIn = !!user;
+  
+  // Define the link interface
+  interface NavLink {
+    name: string;
+    href: string;
+    icon: React.ReactNode;
+    isCart?: boolean;
+  }
+  
   // Base links for all users
-  const baseLinks = [
+  const baseLinks: NavLink[] = [
     {
       name: "Acceuil",
       href: "/",
@@ -63,7 +74,7 @@ export default function BottomNavBar() {
     },
     {
       name: "Panier",
-      href: "/cart",
+      href: "#",
       icon: (
         <span className="relative inline-block">
           <ShoppingCart className="w-6 h-6" />
@@ -84,6 +95,7 @@ export default function BottomNavBar() {
           )}
         </span>
       ),
+      isCart: true,
     },
     {
       name: isLoggedIn ? "Profile" : "Login",
@@ -215,43 +227,70 @@ export default function BottomNavBar() {
   });
 
   return (
-    <nav
-      className="w-full border-t fixed bottom-0 left-0 z-50 md:hidden bottomnav-container"
-      style={
-        {
-          borderColor: currentTheme.border.primary,
-          background: currentTheme.background.primary,
-          "--primary-color": currentTheme.interactive.primary,
-          "--primary-color-dark": currentTheme.interactive.secondary,
-        } as React.CSSProperties
-      }>
-      <ul className="flex justify-around py-0 h-14">
-        {baseLinks.map((link) => {
-          const isActive =
-            link.href === "/"
-              ? router.pathname === "/"
-              : router.pathname === link.href ||
-                router.asPath.startsWith(link.href);
-          return (
-            <li key={link.href} className="flex-1 h-full m-0 p-0">
-              <Link
-                href={link.href}
-                className={`bottomnav-link flex flex-col items-center justify-center w-full h-full transition-all duration-200${
-                  isActive ? " active" : ""
-                }`}
-                style={{
-                  color: isActive
-                    ? currentTheme.interactive.primary
-                    : currentTheme.text.primary,
-                  background: "transparent",
-                  borderRadius: 0,
-                }}>
-                {link.icon}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
-  );
+    <>
+      <nav
+        className="w-full border-t fixed bottom-0 left-0 z-50 md:hidden bottomnav-container"
+        style={
+          {
+            borderColor: currentTheme.border.primary,
+            background: currentTheme.background.primary,
+            "--primary-color": currentTheme.interactive.primary,
+            "--primary-color-dark": currentTheme.interactive.secondary,
+          } as React.CSSProperties
+        }>
+        <ul className="flex justify-around py-0 h-14">
+          {baseLinks.map((link) => {
+            const isActive =
+              link.href === "/"
+                ? router.pathname === "/"
+                : router.pathname === link.href ||
+                  router.asPath.startsWith(link.href);
+            
+            // Handle cart button differently
+            if (link.isCart) {
+              return (
+                <li key={link.href} className="flex-1 h-full m-0 p-0">
+                  <button
+                    onClick={() => (window as unknown as { openCartDrawer?: () => void }).openCartDrawer?.()}
+                    className={`bottomnav-link flex flex-col items-center justify-center w-full h-full transition-all duration-200${
+                      isActive ? " active" : ""
+                    }`}
+                    style={{
+                      color: isActive
+                        ? currentTheme.interactive.primary
+                        : currentTheme.text.primary,
+                      background: "transparent",
+                      borderRadius: 0,
+                      border: "none",
+                      cursor: "pointer",
+                    }}>
+                    {link.icon}
+                  </button>
+                </li>
+              );
+            }
+            
+            return (
+              <li key={link.href} className="flex-1 h-full m-0 p-0">
+                <Link
+                  href={link.href}
+                  className={`bottomnav-link flex flex-col items-center justify-center w-full h-full transition-all duration-200${
+                    isActive ? " active" : ""
+                  }`}
+                  style={{
+                    color: isActive
+                      ? currentTheme.interactive.primary
+                      : currentTheme.text.primary,
+                    background: "transparent",
+                    borderRadius: 0,
+                  }}>
+                  {link.icon}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+              </nav>
+      </>
+    );
 }

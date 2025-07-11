@@ -9,6 +9,7 @@ import { useRef } from "react";
 import axios from "axios";
 import React from "react";
 
+
 // Notification type matches backend model
 interface Notification {
   _id: string;
@@ -28,6 +29,7 @@ export default function Header() {
   const notifDropdownRef = useRef<HTMLDivElement>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
 
   // Fetch notifications from backend
   useEffect(() => {
@@ -244,7 +246,7 @@ export default function Header() {
             {/* Right Side Actions */}
             <div className="flex items-center space-x-3">
               {/* Cart Icon */}
-              <CartIcon className="hidden md:block" />
+                              <CartIcon onClick={() => (window as unknown as { openCartDrawer?: () => void }).openCartDrawer?.()} />
 
               {/* Notification Bell - Desktop only */}
               <div className="hidden md:block relative">

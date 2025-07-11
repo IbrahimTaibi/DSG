@@ -16,7 +16,7 @@ export const CartItem: React.FC<CartItemProps> = ({ product, quantity }) => {
   const [imageError, setImageError] = useState(false);
 
   const handleQuantityChange = (newQuantity: number) => {
-    updateQuantity(product.id, newQuantity);
+    updateQuantity(product._id || product.id, newQuantity);
   };
 
   const handleRemove = () => {
@@ -25,15 +25,18 @@ export const CartItem: React.FC<CartItemProps> = ({ product, quantity }) => {
 
   return (
     <div 
-      className="flex items-center gap-4 p-4 border-b"
-      style={{ borderColor: currentTheme.border.primary }}
+      className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 mb-3 sm:mb-4 rounded-xl transition-all duration-300 ease-out hover:shadow-md hover:scale-[1.01] hover:-translate-y-0.5"
+      style={{ 
+        backgroundColor: currentTheme.background.secondary,
+        border: `1px solid ${currentTheme.border.primary}`,
+      }}
     >
       {/* Product Image */}
       <div className="flex-shrink-0">
         {imageError || !product.image ? (
           // Fallback when image fails to load or doesn't exist
           <div
-            className="w-16 h-16 rounded-lg flex items-center justify-center"
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center"
             style={{
               background: `linear-gradient(135deg, ${currentTheme.interactive.primary}15, ${currentTheme.interactive.primary}08)`,
               border: `1px solid ${currentTheme.border.primary}`,
@@ -41,11 +44,11 @@ export const CartItem: React.FC<CartItemProps> = ({ product, quantity }) => {
           >
             <div className="text-center">
               <div 
-                className="w-8 h-8 mx-auto mb-1 rounded-full flex items-center justify-center"
+                className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-1 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: currentTheme.interactive.primary }}
               >
                 <span 
-                  className="text-sm"
+                  className="text-sm sm:text-lg"
                   style={{ color: currentTheme.text.inverse }}
                 >
                   📦
@@ -57,9 +60,9 @@ export const CartItem: React.FC<CartItemProps> = ({ product, quantity }) => {
           <Image
             src={product.image}
             alt={product.name}
-            width={64}
-            height={64}
-            className="w-16 h-16 object-cover rounded-lg"
+            width={80}
+            height={80}
+            className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl"
             onError={() => setImageError(true)}
             onLoad={() => setImageError(false)}
           />
@@ -68,100 +71,138 @@ export const CartItem: React.FC<CartItemProps> = ({ product, quantity }) => {
 
       {/* Product Details */}
       <div className="flex-1 min-w-0">
-        <h3 
-          className="text-sm font-medium truncate"
-          style={{ color: currentTheme.text.primary }}
-        >
-          {product.name}
-        </h3>
-        <p 
-          className="text-sm"
-          style={{ color: currentTheme.text.secondary }}
-        >
-          {product.category?.name}
-        </p>
-        <p 
-          className="text-sm font-medium"
-          style={{ color: currentTheme.text.primary }}
-        >
-          ${(product.price ?? 0).toFixed(2)}
-        </p>
-      </div>
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1 min-w-0">
+            <h3 
+              className="text-sm sm:text-base font-semibold truncate mb-1"
+              style={{ color: currentTheme.text.primary }}
+            >
+              {product.name}
+            </h3>
+            <p 
+              className="text-xs sm:text-sm mb-2"
+              style={{ color: currentTheme.text.secondary }}
+            >
+              {product.category?.name}
+            </p>
+          </div>
+          
+          {/* Remove Button */}
+          <button
+            onClick={handleRemove}
+            className="p-1.5 sm:p-2 rounded-full transition-all duration-200 hover:scale-110 ml-2"
+            style={{
+              color: currentTheme.status.error,
+              backgroundColor: currentTheme.background.primary,
+              border: `1px solid ${currentTheme.border.primary}`,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = currentTheme.status.error;
+              e.currentTarget.style.color = currentTheme.text.inverse;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = currentTheme.background.primary;
+              e.currentTarget.style.color = currentTheme.status.error;
+            }}
+            aria-label="Remove item"
+          >
+            <X className="w-3 h-3 sm:w-4 sm:h-4" />
+          </button>
+        </div>
 
-      {/* Quantity Controls */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => handleQuantityChange(quantity - 1)}
-          className="p-1 rounded-full transition-colors"
-          style={{
-            color: currentTheme.text.secondary,
-            backgroundColor: 'transparent',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = currentTheme.background.secondary;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-          aria-label="Decrease quantity"
-        >
-          <Minus className="w-4 h-4" />
-        </button>
-        
-        <span 
-          className="w-8 text-center text-sm font-medium"
-          style={{ color: currentTheme.text.primary }}
-        >
-          {quantity}
-        </span>
-        
-        <button
-          onClick={() => handleQuantityChange(quantity + 1)}
-          className="p-1 rounded-full transition-colors"
-          style={{
-            color: currentTheme.text.secondary,
-            backgroundColor: 'transparent',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = currentTheme.background.secondary;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-          aria-label="Increase quantity"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-      </div>
+        {/* Price and Quantity Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* Unit Price */}
+            <div>
+              <p 
+                className="text-xs sm:text-sm"
+                style={{ color: currentTheme.text.secondary }}
+              >
+                Prix unitaire
+              </p>
+              <p 
+                className="text-sm sm:text-base font-semibold"
+                style={{ color: currentTheme.text.primary }}
+              >
+                ${(product.price ?? 0).toFixed(2)}
+              </p>
+            </div>
 
-      {/* Total Price */}
-      <div className="text-right">
-        <p 
-          className="text-sm font-medium"
-          style={{ color: currentTheme.text.primary }}
-        >
-          {((product.price ?? 0) * quantity).toFixed(2)}
-        </p>
-      </div>
+            {/* Quantity Controls */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <button
+                onClick={() => handleQuantityChange(quantity - 1)}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+                style={{
+                  color: currentTheme.text.secondary,
+                  backgroundColor: currentTheme.background.primary,
+                  border: `1px solid ${currentTheme.border.primary}`,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = currentTheme.interactive.primary;
+                  e.currentTarget.style.color = currentTheme.text.inverse;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = currentTheme.background.primary;
+                  e.currentTarget.style.color = currentTheme.text.secondary;
+                }}
+                aria-label="Decrease quantity"
+              >
+                <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+              </button>
+              
+              <span 
+                className="w-10 sm:w-12 text-center text-sm sm:text-base font-semibold px-2 sm:px-3 py-1 rounded-lg"
+                style={{ 
+                  color: currentTheme.text.primary,
+                  backgroundColor: currentTheme.background.primary,
+                  border: `1px solid ${currentTheme.border.primary}`,
+                }}
+              >
+                {quantity}
+              </span>
+              
+              <button
+                onClick={() => handleQuantityChange(quantity + 1)}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+                style={{
+                  color: currentTheme.text.secondary,
+                  backgroundColor: currentTheme.background.primary,
+                  border: `1px solid ${currentTheme.border.primary}`,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = currentTheme.interactive.primary;
+                  e.currentTarget.style.color = currentTheme.text.inverse;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = currentTheme.background.primary;
+                  e.currentTarget.style.color = currentTheme.text.secondary;
+                }}
+                aria-label="Increase quantity"
+              >
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+              </button>
+            </div>
+          </div>
 
-      {/* Remove Button */}
-      <button
-        onClick={handleRemove}
-        className="p-1 rounded-full transition-colors"
-        style={{
-          color: currentTheme.status.error,
-          backgroundColor: 'transparent',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = `${currentTheme.status.error}15`;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'transparent';
-        }}
-        aria-label="Remove item"
-      >
-        <X className="w-4 h-4" />
-      </button>
+          {/* Total Price */}
+          <div className="text-right sm:text-right">
+            <p 
+              className="text-xs sm:text-sm"
+              style={{ color: currentTheme.text.secondary }}
+            >
+              Total
+            </p>
+            <p 
+              className="text-base sm:text-lg font-bold"
+              style={{ color: currentTheme.interactive.primary }}
+            >
+              ${((product.price ?? 0) * quantity).toFixed(2)}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }; 

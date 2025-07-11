@@ -78,6 +78,33 @@ const CategoryNavBar = React.memo(function CategoryNavBar() {
         <div className="flex items-center justify-between h-10 sm:h-12">
           {/* Mobile: Horizontal scrollable */}
           <div className="flex flex-nowrap overflow-x-auto scrollbar-hide gap-2 flex-1 sm:hidden">
+            <Link
+              href="/category/all"
+              className={`relative px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                router.asPath === '/category/all'
+                  ? 'text-white'
+                  : 'hover:text-white'
+              }`}
+              style={getCategoryLinkStyles(router.asPath === '/category/all')}
+              onMouseEnter={(e) => {
+                if (router.asPath !== '/category/all') {
+                  e.currentTarget.style.backgroundColor = `${currentTheme.interactive.primary}20`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (router.asPath !== '/category/all') {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              Tous les produits
+              {router.asPath === '/category/all' && (
+                <div
+                  className="absolute bottom-0 left-0 w-full h-0.5"
+                  style={{ backgroundColor: currentTheme.interactive.accent }}
+                />
+              )}
+            </Link>
             {categories.map((category) => (
               <Link
                 key={category._id}
@@ -112,6 +139,33 @@ const CategoryNavBar = React.memo(function CategoryNavBar() {
 
           {/* Desktop: Wrapping */}
           <div className="hidden sm:flex flex-wrap gap-2 flex-1">
+            <Link
+              href="/category/all"
+              className={`relative px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 hover:scale-105 ${
+                router.asPath === '/category/all'
+                  ? 'text-white'
+                  : 'hover:text-white'
+              }`}
+              style={getCategoryLinkStyles(router.asPath === '/category/all')}
+              onMouseEnter={(e) => {
+                if (router.asPath !== '/category/all') {
+                  e.currentTarget.style.backgroundColor = `${currentTheme.interactive.primary}20`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (router.asPath !== '/category/all') {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              Tous les produits
+              {router.asPath === '/category/all' && (
+                <div
+                  className="absolute bottom-0 left-0 w-full h-0.5"
+                  style={{ backgroundColor: currentTheme.interactive.accent }}
+                />
+              )}
+            </Link>
             {categories.map((category) => (
               <Link
                 key={category._id}
