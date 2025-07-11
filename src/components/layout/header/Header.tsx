@@ -502,7 +502,16 @@ export default function Header() {
                           <p
                             className="text-xs"
                             style={{ color: currentTheme.text.muted }}>
-                            {user.address}
+                            {typeof user.address === "object"
+                              ? (user.address.address || user.address.city || user.address.state || user.address.zipCode
+                                  ? [
+                                      user.address.address,
+                                      user.address.city,
+                                      user.address.state,
+                                      user.address.zipCode
+                                    ].filter(Boolean).join(", ")
+                                  : <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{JSON.stringify(user.address, null, 2)}</pre>)
+                              : user.address}
                           </p>
                         )}
                       </div>
