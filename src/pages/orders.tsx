@@ -2,37 +2,21 @@ import { useDarkMode } from "@/contexts/DarkModeContext";
 import SectionHeader from "@/components/ui/SectionHeader";
 import OrderCard, { OrderCardProps } from "@/components/ui/OrderCard";
 import Link from "next/link";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { GetServerSideProps } from "next";
+import { parseCookies } from "@/utils/cookie";
+import { useCurrency } from "@/hooks/useCurrency";
 
-const mockOrders: OrderCardProps[] = [
-  {
-    id: "1001",
-    date: "2024-05-01",
-    status: "Livré",
-    total: "45,00€",
-    items: [
-      { name: "Eau minérale", qty: 2 },
-      { name: "Chips saveur", qty: 1 },
-    ],
-  },
-  {
-    id: "1002",
-    date: "2024-05-03",
-    status: "En cours",
-    total: "22,50€",
-    items: [{ name: "Biscuits sucrés", qty: 3 }],
-  },
-  {
-    id: "1003",
-    date: "2024-05-05",
-    status: "Annulée",
-    total: "0,00€",
-    items: [{ name: "Jus d'orange", qty: 1 }],
-  },
-];
+interface OrdersPageProps {
+  orders: OrderCardProps[];
+  error?: string;
+}
 
-export default function OrdersPage() {
+export default function OrdersPage({ orders, error }: OrdersPageProps) {
   const { currentTheme } = useDarkMode();
+  const { format } = useCurrency();
+  
   return (
     <div
       className="min-h-screen flex flex-col items-center px-2 py-10"
@@ -44,7 +28,11 @@ export default function OrdersPage() {
             "Consultez l&rsquo;historique et le statut de vos commandes."
           }
         />
-        {mockOrders.length === 0 ? (
+        {error ? (
+          <div className="flex flex-col items-center justify-center py-24">
+            <p className="text-lg font-medium text-red-500">{error}</p>
+          </div>
+        ) : orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24">
             <svg
               width="80"
@@ -68,7 +56,7 @@ export default function OrdersPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {mockOrders.map((order) => (
+            {orders.map((order) => (
               <Link
                 key={order.id}
                 href={`/orders/${order.id}`}
@@ -82,10 +70,65 @@ export default function OrdersPage() {
       </div>
       <style jsx global>{`
         .group:hover .rounded-2xl {
-          box-shadow: 0 4px 24px 0 ${mockOrders[0] ? "#00000022" : "#00000011"};
+          box-shadow: 0 4px 24px 0 ${orders[0] ? "#00000022" : "#00000011"};
           transform: translateY(-2px) scale(1.01);
         }
       `}</style>
     </div>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const { req } = context;
+  const cookies = parseCookies(req.headers.cookie);
+  const token = cookies["authToken"];
+  if (!token) {
+    return {
+      props: {
+        orders: [],
+        error: "Vous devez être connecté pour voir vos commandes.",
+      },
+    };
+  }
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5010"}/api/orders/my`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Erreur lors du chargement des commandes.");
+    }
+    const backendOrders = await response.json();
+    const orders: OrderCardProps[] = backendOrders.map((order: any) => ({
+      id: order.orderId || order._id,
+      date: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "",
+      status:
+        order.status === "delivered"
+          ? "Livré"
+          : order.status === "pending"
+          ? "En cours"
+          : order.status === "cancelled"
+          ? "Annulée"
+          : order.status,
+      total: order.total || 0, // Pass as number, OrderCard will format it
+      items: Array.isArray(order.products)
+        ? order.products.map((p: any) => ({
+            name: p.product?.name || "Produit inconnu",
+            qty: p.quantity,
+          }))
+        : [],
+    }));
+    return { props: { orders } };
+  } catch (err: any) {
+    return {
+      props: {
+        orders: [],
+        error: err.message || "Erreur lors du chargement des commandes.",
+      },
+    };
+  }
+};

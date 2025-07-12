@@ -1,9 +1,9 @@
 import { GetServerSideProps, NextPage } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { fetchCategoryBySlug, fetchCategoryTree } from '@/services/categoryService';
+import { fetchCategoryBySlug } from '@/services/categoryService';
 import { fetchProductsByCategorySlug, ProductListResult } from '@/services/productService';
-import { joinSlug, parseSlug } from '@/utils/slugUtils';
+import { parseSlug } from '@/utils/slugUtils';
 import { CategoryHeader } from '@/components/categories/CategoryHeader';
 import { Breadcrumb, BreadcrumbItem } from '@/components/categories/Breadcrumb';
 import ProductGrid from '@/components/product/ProductGrid';
@@ -33,7 +33,7 @@ const CategoryPage: NextPage<CategoryPageProps> = ({ category, products, total, 
   if (category) {
     // Build up the breadcrumb from the slug
     let path = '/categories';
-    slug.forEach((s, idx) => {
+    slug.forEach((s) => {
       path += `/${s}`;
       breadcrumbItems.push({ name: s, href: path });
     });
@@ -94,15 +94,17 @@ const CategoryPage: NextPage<CategoryPageProps> = ({ category, products, total, 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { slug, page } = context.query;
   const slugArr = parseSlug(slug);
-  const joinedSlug = joinSlug(slugArr);
-  const pageNum = page ? parseInt(page as string, 10) : 1;
+  const pageNum = page ? parseInt(page as unknown as string, 10) : 1;
 
   try {
     const category = await fetchCategoryBySlug(slugArr[slugArr.length - 1]);
     if (!category) {
       return { props: { category: null, products: [], total: 0, page: 1, pageSize: 20, slug: slugArr, error: null } };
     }
+    
+    // Fetch real products for the category
     const productResult: ProductListResult = await fetchProductsByCategorySlug(category.slug, pageNum, 20);
+    
     return {
       props: {
         category,
@@ -113,7 +115,20 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         slug: slugArr,
       },
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      return {
+        props: {
+          category: null,
+          products: [],
+          total: 0,
+          page: 1,
+          pageSize: 20,
+          slug: slugArr,
+          error: err.message || 'Failed to load category or products.',
+        },
+      };
+    }
     return {
       props: {
         category: null,
@@ -122,7 +137,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         page: 1,
         pageSize: 20,
         slug: slugArr,
-        error: err.message || 'Failed to load category or products.',
+        error: 'Failed to load category or products.',
       },
     };
   }

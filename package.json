@@ -21,6 +21,7 @@
     "react-grid-layout": "^1.5.2",
     "react-resizable": "^3.0.5",
     "recharts": "^3.0.2",
+    "socket.io-client": "^4.8.1",
     "tailwind-scrollbar-hide": "^4.0.0"
   },
   "devDependencies": {

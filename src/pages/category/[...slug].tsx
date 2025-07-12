@@ -1,9 +1,7 @@
 import { GetServerSideProps, NextPage } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { fetchCategoryBySlug, fetchCategoryBySlugPath, fetchCategoryTree } from '@/services/categoryService';
-import { fetchProductsByCategoryIdFast } from '@/services/productService';
-import { joinSlug, parseSlug } from '@/utils/slugUtils';
+import { parseSlug } from '@/utils/slugUtils';
 import { CategoryHeader } from '@/components/categories/CategoryHeader';
 import { Breadcrumb, BreadcrumbItem } from '@/components/categories/Breadcrumb';
 import ProductGrid from '@/components/product/ProductGrid';
@@ -30,7 +28,6 @@ const CategoryPage: NextPage<CategoryPageProps> = ({ category, products, total, 
   // Search/filter/sort state from query
   const q = typeof router.query.q === 'string' ? router.query.q : '';
   const sort = typeof router.query.sort === 'string' ? router.query.sort : 'createdAt';
-  const order = typeof router.query.order === 'string' ? router.query.order : 'desc';
   const stock = typeof router.query.stock === 'string' ? router.query.stock : 'all';
 
   // Local state for search input
@@ -47,8 +44,7 @@ const CategoryPage: NextPage<CategoryPageProps> = ({ category, products, total, 
       }
     }, 300);
     return () => clearTimeout(handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchInput]);
+  }, [searchInput, q, router.query, slug, router]);
 
   // Handlers
   const handleSearchChange = (value: string) => {
@@ -58,12 +54,6 @@ const CategoryPage: NextPage<CategoryPageProps> = ({ category, products, total, 
     router.replace({
       pathname: `/category/${slug.join('/')}`,
       query: { ...router.query, sort: value, page: 1 },
-    });
-  };
-  const handleOrderChange = (value: string) => {
-    router.replace({
-      pathname: `/category/${slug.join('/')}`,
-      query: { ...router.query, order: value, page: 1 },
     });
   };
   const handleFilterChange = (value: string) => {
@@ -87,7 +77,7 @@ const CategoryPage: NextPage<CategoryPageProps> = ({ category, products, total, 
   if (category) {
     // Build up the breadcrumb from the slug
     let path = '/categories';
-    slug.forEach((s, idx) => {
+    slug.forEach((s) => {
       path += `/${s}`;
       breadcrumbItems.push({ name: s, href: path });
     });
@@ -144,18 +134,18 @@ const CategoryPage: NextPage<CategoryPageProps> = ({ category, products, total, 
             {total > pageSize && (
               <div className="flex justify-center mt-8">
                 <nav className="inline-flex rounded-md shadow-sm" aria-label="Pagination">
-                  {Array.from({ length: Math.ceil(total / pageSize) }, (_, idx) => (
+                  {Array.from({ length: Math.ceil(total / pageSize) }, (_, pageIdx) => (
                     <button
-                      key={idx + 1}
-                      onClick={() => handlePageChange(idx + 1)}
+                      key={pageIdx + 1}
+                      onClick={() => handlePageChange(pageIdx + 1)}
                       className={`px-4 py-2 border text-sm font-medium focus:outline-none transition-colors ${
-                        page === idx + 1
+                        page === pageIdx + 1
                           ? 'bg-blue-600 text-white border-blue-600'
                           : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700'
                       }`}
                       disabled={loading}
                     >
-                      {idx + 1}
+                      {pageIdx + 1}
                     </button>
                   ))}
                 </nav>
@@ -171,14 +161,13 @@ const CategoryPage: NextPage<CategoryPageProps> = ({ category, products, total, 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { slug, page, q, sort, order, stock } = context.query;
   const slugArr = parseSlug(slug);
-  const joinedSlug = joinSlug(slugArr);
   const pageNum = page ? parseInt(page as string, 10) : 1;
   const PAGE_SIZE = 20;
 
   // Special case: /category/all => show all products using fetchAllProducts (calls /api/products)
   if (slugArr.length === 1 && slugArr[0] === 'all') {
     try {
-      const params: any = { page: pageNum, limit: PAGE_SIZE };
+      const params: Record<string, unknown> = { page: pageNum, limit: PAGE_SIZE };
       if (q) params.q = q;
       if (sort) params.sort = sort;
       if (order) params.order = order;
@@ -197,7 +186,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
           error: null,
         },
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       return {
         props: {
           category: { name: 'Tous les produits', description: '', _id: 'all', slug: 'all', children: [] },
@@ -206,37 +195,38 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
           page: 1,
           pageSize: PAGE_SIZE,
           slug: slugArr,
-          error: err.message || 'Failed to load products.',
+          error: err instanceof Error ? err.message : 'Failed to load products.',
         },
       };
     }
   }
 
   // Debug logs
-  // eslint-disable-next-line no-console
   console.log('SSR: slugArr:', slugArr);
-  // eslint-disable-next-line no-console
-  console.log('SSR: joinedSlug:', joinedSlug);
+  console.log('SSR: joinedSlug:', slugArr.join('/'));
 
   try {
     // 1. Fetch the category tree
-    const categoryTree = await fetchCategoryTree();
+    const categoryTree = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/api/categories/tree`);
+    const categoryTreeData: unknown = await categoryTree.json();
+    if (!Array.isArray(categoryTreeData)) {
+      throw new Error('Failed to fetch category tree.');
+    }
 
     // 2. Find the current category by path
-    function findCategoryByPath(tree: any[], path: string[]): any | null {
+    function findCategoryByPath(tree: unknown[], path: string[]): unknown | null {
       if (!path.length) return null;
-      let node: any = null;
-      let nodes: any[] = tree;
+      let node: unknown = null;
+      let nodes: unknown[] = tree;
       for (const slug of path) {
-        node = nodes.find((cat: any) => cat.slug === slug);
+        node = nodes.find((cat: unknown) => (cat as Record<string, unknown>).slug === slug);
         if (!node) return null;
-        nodes = node.children || [];
+        nodes = (node as Record<string, unknown>).children as unknown[] || [];
       }
       return node;
     }
 
-    const currentCategory = findCategoryByPath(categoryTree, slugArr);
-    // eslint-disable-next-line no-console
+    const currentCategory = findCategoryByPath(categoryTreeData, slugArr);
     console.log('SSR: currentCategory:', currentCategory);
     if (!currentCategory) {
       return { props: { category: null, products: [], total: 0, page: 1, pageSize: PAGE_SIZE, slug: slugArr, error: null } };
@@ -244,7 +234,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
     // 3. Fetch all products for this category and its descendants using the fast endpoint
     // Now use advancedSearch for filtering/sorting
-    const params: any = { category: currentCategory.slug, page: pageNum, limit: PAGE_SIZE };
+    const params: Record<string, unknown> = { category: (currentCategory as Record<string, unknown>).slug, page: pageNum, limit: PAGE_SIZE };
     if (q) params.q = q;
     if (sort) params.sort = sort;
     if (order) params.order = order;
@@ -262,8 +252,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         slug: slugArr,
       },
     };
-  } catch (err: any) {
-    // eslint-disable-next-line no-console
+  } catch (err: unknown) {
     console.log('SSR: error:', err);
     return {
       props: {
@@ -273,7 +262,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         page: 1,
         pageSize: 20,
         slug: slugArr,
-        error: err.message || 'Failed to load category or products.',
+        error: err instanceof Error ? err.message : 'Failed to load category or products.',
       },
     };
   }

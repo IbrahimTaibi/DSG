@@ -8,6 +8,13 @@ import React, {
 } from "react";
 import axios from "axios";
 
+interface Address {
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+}
+
 interface User {
   id: string;
   email: string;
@@ -15,7 +22,7 @@ interface User {
   role: "store" | "admin" | "delivery";
   avatar?: string;
   mobile?: string;
-  address?: string;
+  address?: Address;
   createdAt?: string;
 }
 
@@ -32,7 +39,7 @@ export interface AuthContextType {
     name: string;
     email?: string;
     mobile: string;
-    address?: string;
+    address?: Address;
     password: string;
     role: string;
   }) => Promise<{ success: boolean; error?: string }>;
@@ -125,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name: string;
     email?: string;
     mobile: string;
-    address?: string;
+    address?: Address;
     password: string;
     role: string;
   }) => {

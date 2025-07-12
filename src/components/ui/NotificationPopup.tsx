@@ -2,6 +2,21 @@ import React from "react";
 import { useDarkMode } from "../../contexts/DarkModeContext";
 import { colors } from "../../theme";
 
+interface OrderDetailsType {
+  orderId?: string;
+  total?: number;
+  status?: string;
+  products?: Array<{ product: string; quantity: number; price: number }>;
+  address?: {
+    address?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 interface NotificationPopupProps {
   isOpen: boolean;
   onClose: () => void;
@@ -10,6 +25,7 @@ interface NotificationPopupProps {
   message: string;
   autoClose?: boolean;
   autoCloseDelay?: number;
+  details?: OrderDetailsType; // Optional: for expandable details (e.g., order info)
 }
 
 const NotificationPopup: React.FC<NotificationPopupProps> = ({
@@ -20,8 +36,10 @@ const NotificationPopup: React.FC<NotificationPopupProps> = ({
   message,
   autoClose = true,
   autoCloseDelay = 3000,
+  details,
 }) => {
   const { currentTheme } = useDarkMode();
+  const [expanded, setExpanded] = React.useState(false);
 
   React.useEffect(() => {
     if (isOpen && autoClose) {
@@ -184,6 +202,40 @@ const NotificationPopup: React.FC<NotificationPopupProps> = ({
             style={{ color: currentTheme.text.secondary }}>
             {message}
           </p>
+          {details && (
+            <button
+              className="flex items-center mt-2 text-xs font-medium focus:outline-none"
+              style={{ color: currentTheme.interactive.primary }}
+              onClick={() => setExpanded((prev) => !prev)}
+              aria-expanded={expanded}
+            >
+              <span>{expanded ? "Masquer les détails" : "Afficher les détails"}</span>
+              <svg
+                className={`ml-1 transition-transform duration-200 ${expanded ? "rotate-180" : "rotate-0"}`}
+                width="16"
+                height="16"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M19 9l-7 7-7-7"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          )}
+          {details && expanded && (
+            <div className="mt-4 rounded-lg p-3 border text-xs" style={{ background: currentTheme.background.secondary, borderColor: currentTheme.border.primary, color: currentTheme.text.primary }}>
+              {typeof details === "object" ? (
+                <OrderDetails details={details} />
+              ) : (
+                <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{details}</pre>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
@@ -200,6 +252,54 @@ const NotificationPopup: React.FC<NotificationPopupProps> = ({
           </button>
         </div>
       </div>
+    </div>
+  );
+};
+
+// Helper component for rendering order details in a structured way
+const OrderDetails: React.FC<{ details: OrderDetailsType }> = ({ details }) => {
+  if (!details) return null;
+  const d = details;
+  return (
+    <div className="space-y-2">
+      {d.orderId && (
+        <div><span className="font-semibold">Commande ID:</span> {d.orderId}</div>
+      )}
+      {d.status && (
+        <div><span className="font-semibold">Statut:</span> {d.status}</div>
+      )}
+      {d.total && (
+        <div><span className="font-semibold">Total:</span> ${typeof d.total === 'number' && d.total.toFixed ? d.total.toFixed(2) : d.total}</div>
+      )}
+      {Array.isArray(d.products) && d.products.length > 0 && (
+        <div>
+          <div className="font-semibold mb-1">Produits:</div>
+          <ul className="list-disc pl-5">
+            {d.products.map((prod, idx) => (
+              <li key={idx}>
+                <span className="font-medium">{prod.product}</span> — Qté: {prod.quantity}, Prix: ${prod.price}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {d.address && typeof d.address === "object" && d.address !== null && (
+        <div>
+          <div className="font-semibold mb-1">Adresse de livraison:</div>
+          <div>
+            {d.address.address || d.address.city || d.address.state || d.address.zipCode ? (
+              [
+                d.address.address,
+                d.address.city,
+                d.address.state,
+                d.address.zipCode
+              ].filter(Boolean).join(", ")
+            ) : (
+              <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{JSON.stringify(d.address, null, 2)}</pre>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

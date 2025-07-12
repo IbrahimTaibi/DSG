@@ -4,6 +4,8 @@ import type { AppProps } from "next/app";
 import { DarkModeProvider, useDarkMode } from "../contexts/DarkModeContext";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
 import { CartProvider } from "../contexts/CartContext";
+import { SocketProvider } from "../contexts/SocketContext";
+import { NotificationProvider } from "../contexts/NotificationContext";
 import BottomNavBar from "../components/layout/nav/BottomNavBar";
 import MainNavBar from "../components/layout/nav/MainNavBar";
 import Header from "../components/layout/header/Header";
@@ -117,9 +119,13 @@ export default function App(props: AppProps) {
   return (
     <DarkModeProvider>
       <AuthProvider>
-        <CartProvider>
-          <AppLayout {...props} />
-        </CartProvider>
+        <SocketProvider>
+          <NotificationProvider>
+            <CartProvider>
+              <AppLayout {...props} />
+            </CartProvider>
+          </NotificationProvider>
+        </SocketProvider>
       </AuthProvider>
     </DarkModeProvider>
   );

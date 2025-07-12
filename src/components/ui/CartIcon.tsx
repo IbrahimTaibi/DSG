@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useDarkMode } from '@/contexts/DarkModeContext';

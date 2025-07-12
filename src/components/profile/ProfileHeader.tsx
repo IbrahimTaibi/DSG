@@ -116,7 +116,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ joinDate, user: userProp 
                   d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                 />
               </svg>
-              {user.address}
+              {typeof user.address === 'string'
+                ? user.address
+                : [user.address.address, user.address.city, user.address.state, user.address.zipCode].filter(Boolean).join(', ')}
             </p>
           )}
           <div

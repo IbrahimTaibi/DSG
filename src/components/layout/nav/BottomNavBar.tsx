@@ -1,46 +1,18 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useDarkMode } from "../../../contexts/DarkModeContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useCart } from "../../../contexts/CartContext";
+import { useNotifications } from "../../../contexts/NotificationContext";
 import { ShoppingCart } from "lucide-react";
-
-import axios from "axios";
-import { useEffect, useState } from "react";
 
 export default function BottomNavBar() {
   const { currentTheme } = useDarkMode();
   const { user } = useAuth();
   const { state: cartState } = useCart();
+  const { unreadCount } = useNotifications();
   const router = useRouter();
-  const [unreadCount, setUnreadCount] = useState(0);
-
-
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) return;
-      try {
-        const response = await axios.get(
-          `${
-            process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5010"
-          }/api/auth/notifications`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-        const notifications = response.data.notifications || [];
-        setUnreadCount(
-          notifications.filter((n: { read: boolean }) => n.read === false)
-            .length,
-        );
-      } catch {
-        setUnreadCount(0);
-      }
-    };
-    fetchNotifications();
-  }, [user]);
 
   const isLoggedIn = !!user;
   

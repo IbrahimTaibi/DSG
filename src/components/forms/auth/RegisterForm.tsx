@@ -13,6 +13,9 @@ const RegisterForm = () => {
     email: "",
     mobile: "",
     address: "",
+    city: "",
+    state: "",
+    zipCode: "",
     password: "",
     confirmPassword: "",
   });
@@ -30,6 +33,9 @@ const RegisterForm = () => {
       !formData.email ||
       !formData.mobile ||
       !formData.address ||
+      !formData.city ||
+      !formData.state ||
+      !formData.zipCode ||
       !formData.password ||
       !formData.confirmPassword
     ) {
@@ -51,7 +57,12 @@ const RegisterForm = () => {
         name: formData.name,
         email: formData.email,
         mobile: formData.mobile,
-        address: formData.address,
+        address: {
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+        },
         password: formData.password,
         role: "store", // Default role for new registrations
       };
@@ -247,6 +258,83 @@ const RegisterForm = () => {
               }}
               placeholder="Votre adresse complète"
             />
+          </div>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label
+                htmlFor="city"
+                className="block text-sm font-medium mb-2"
+                style={{ color: currentTheme.text.primary }}>
+                Ville
+              </label>
+              <input
+                id="city"
+                name="city"
+                type="text"
+                required
+                value={formData.city}
+                onChange={handleChange}
+                disabled={isSubmitting}
+                className="w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
+                style={{
+                  backgroundColor: currentTheme.background.secondary,
+                  color: currentTheme.text.primary,
+                  border: `1px solid ${currentTheme.border.primary}`,
+                  boxShadow: `0 1px 3px ${currentTheme.border.primary}20`,
+                }}
+                placeholder="Ville"
+              />
+            </div>
+            <div className="flex-1">
+              <label
+                htmlFor="state"
+                className="block text-sm font-medium mb-2"
+                style={{ color: currentTheme.text.primary }}>
+                État / Région
+              </label>
+              <input
+                id="state"
+                name="state"
+                type="text"
+                required
+                value={formData.state}
+                onChange={handleChange}
+                disabled={isSubmitting}
+                className="w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
+                style={{
+                  backgroundColor: currentTheme.background.secondary,
+                  color: currentTheme.text.primary,
+                  border: `1px solid ${currentTheme.border.primary}`,
+                  boxShadow: `0 1px 3px ${currentTheme.border.primary}20`,
+                }}
+                placeholder="État / Région"
+              />
+            </div>
+            <div className="flex-1">
+              <label
+                htmlFor="zipCode"
+                className="block text-sm font-medium mb-2"
+                style={{ color: currentTheme.text.primary }}>
+                Code postal
+              </label>
+              <input
+                id="zipCode"
+                name="zipCode"
+                type="text"
+                required
+                value={formData.zipCode}
+                onChange={handleChange}
+                disabled={isSubmitting}
+                className="w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
+                style={{
+                  backgroundColor: currentTheme.background.secondary,
+                  color: currentTheme.text.primary,
+                  border: `1px solid ${currentTheme.border.primary}`,
+                  boxShadow: `0 1px 3px ${currentTheme.border.primary}20`,
+                }}
+                placeholder="Code postal"
+              />
+            </div>
           </div>
 
           {/* Password Field */}

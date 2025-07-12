@@ -18,7 +18,7 @@ interface CategoryItemProps {
 
 const buildCategoryPath = (category: CategoryTree, tree: CategoryTree[]): string[] => {
   // Recursively find the path from root to this category
-  let path: string[] = [];
+  const path: string[] = [];
   function traverse(nodes: CategoryTree[], targetId: string, acc: string[]): boolean {
     for (const node of nodes) {
       if (node._id === targetId) {

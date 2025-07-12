@@ -9,6 +9,7 @@ import {
   AreaChart,
 } from "recharts";
 import { useDarkMode } from "@/contexts/DarkModeContext";
+import { formatCurrency } from "@/config/currency";
 
 interface RevenueData {
   month: string;
@@ -69,7 +70,7 @@ export default function RevenueChart({
                     ? currentTheme.status.info
                     : currentTheme.status.warning,
               }}>
-              {entry.name}: {entry.value}€
+              {entry.name}: {formatCurrency(entry.value)}
             </p>
           ))}
         </div>

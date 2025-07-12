@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useDarkMode } from "../../../contexts/DarkModeContext";
 import { useAuth } from "../../../hooks/useAuth";
+import { useNotifications } from "../../../contexts/NotificationContext";
 import NotificationBell from "../../ui/NotificationBell";
 import DashboardButton from "../../ui/DashboardButton";
 import { CartIcon } from "../../ui/CartIcon";
@@ -22,41 +23,15 @@ interface Notification {
 export default function Header() {
   const { darkMode, toggleDarkMode, currentTheme } = useDarkMode();
   const { user, isAuthenticated, logout } = useAuth();
+  const { notifications, unreadCount, markAllAsRead } = useNotifications();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
 
 
-  // Fetch notifications from backend
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) return;
-      try {
-        const response = await axios.get(
-          `${
-            process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5010"
-          }/api/auth/notifications`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-        const notifs: Notification[] = response.data.notifications || [];
-        setNotifications(notifs);
-        setUnreadCount(notifs.filter((n) => n.read === false).length);
-      } catch {
-        setNotifications([]);
-        setUnreadCount(0);
-      }
-    };
-    if (isAuthenticated) {
-      fetchNotifications();
-    }
-  }, [isAuthenticated]);
+  // Notifications are now handled by the NotificationContext
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -83,21 +58,8 @@ export default function Header() {
     setShowNotifications((v) => !v);
     if (!showNotifications) {
       // Only mark as read when opening
-      const token = localStorage.getItem("authToken");
-      if (!token) return;
       try {
-        await axios.put(
-          `${
-            process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5010"
-          }/api/auth/notifications/read/all`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-        // Update state locally
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        setUnreadCount(0);
+        await markAllAsRead();
       } catch {}
     }
   };

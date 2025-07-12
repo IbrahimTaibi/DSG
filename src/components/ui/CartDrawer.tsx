@@ -2,13 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useDarkMode } from '@/contexts/DarkModeContext';
 import { CartItem } from './CartItem';
+import { useRouter } from 'next/router';
+import { useCurrency } from '@/hooks/useCurrency';
 
 const CartDrawer: React.FC = () => {
   const { state } = useCart();
   const cart = state.items;
   const total = state.total;
   const { currentTheme } = useDarkMode();
+  const { format } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   const openDrawer = () => setIsOpen(true);
   const closeDrawer = () => setIsOpen(false);
@@ -144,7 +148,7 @@ const CartDrawer: React.FC = () => {
                 style={{ transitionDelay: '200ms' }}
               >
                 <span className="text-xs sm:text-sm" style={{ color: currentTheme.text.secondary }}>Sous-total</span>
-                <span className="text-xs sm:text-sm font-medium" style={{ color: currentTheme.text.primary }}>${(total || 0).toFixed(2)}</span>
+                <span className="text-xs sm:text-sm font-medium" style={{ color: currentTheme.text.primary }}>{format(total || 0)}</span>
               </div>
               <div 
                 className={`flex items-center justify-between transition-all duration-500 ease-out ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'}`}
@@ -162,7 +166,7 @@ const CartDrawer: React.FC = () => {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-base sm:text-lg font-bold" style={{ color: currentTheme.text.primary }}>Total</span>
-                  <span className="text-lg sm:text-xl font-bold" style={{ color: currentTheme.interactive.primary }}>${(total || 0).toFixed(2)}</span>
+                  <span className="text-lg sm:text-xl font-bold" style={{ color: currentTheme.interactive.primary }}>{format(total || 0)}</span>
                 </div>
               </div>
             </div>
@@ -184,6 +188,10 @@ const CartDrawer: React.FC = () => {
                 e.currentTarget.style.backgroundColor = currentTheme.interactive.primary;
                 e.currentTarget.style.color = currentTheme.text.inverse;
                 e.currentTarget.style.transform = 'scale(1) translateY(0)';
+              }}
+              onClick={() => {
+                closeDrawer();
+                router.push('/checkout');
               }}
             >
               Commander maintenant

@@ -2,27 +2,14 @@ import { useDarkMode } from "@/contexts/DarkModeContext";
 import SectionHeader from "@/components/ui/SectionHeader";
 import OrderCard, { OrderCardProps } from "@/components/ui/OrderCard";
 import React from "react";
+import { GetServerSideProps } from "next";
+import { parseCookies } from "@/utils/cookie";
+import { mapBackendOrderToOrderDetails, OrderDetails } from "@/utils/orderMapping";
 
-const mockOrder: OrderCardProps & {
-  address: string;
-  timeline: { label: string; date: string; done: boolean }[];
-} = {
-  id: "1001",
-  date: "2024-05-01",
-  status: "En cours",
-  total: "45,00€",
-  items: [
-    { name: "Eau minérale", qty: 2 },
-    { name: "Chips saveur", qty: 1 },
-  ],
-  address: "12 Rue de Paris, 75001 Paris, France",
-  timeline: [
-    { label: "Commande passée", date: "2024-05-01", done: true },
-    { label: "En préparation", date: "2024-05-01", done: true },
-    { label: "En cours de livraison", date: "2024-05-02", done: false },
-    { label: "Livré", date: "", done: false },
-  ],
-};
+interface SingleOrderPageProps {
+  order: OrderDetails | null;
+  error?: string;
+}
 
 function OrderTimeline({
   timeline,
@@ -59,10 +46,26 @@ function OrderTimeline({
   );
 }
 
-export default function SingleOrderPage() {
+export default function SingleOrderPage({ order, error }: SingleOrderPageProps) {
   const { currentTheme } = useDarkMode();
-  // In real app, fetch order by query.orderId
-  const order = mockOrder;
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center px-2 py-10" style={{ background: currentTheme.background.primary }}>
+        <div className="w-full max-w-2xl mx-auto">
+          <SectionHeader title="Erreur" subtitle={error} />
+        </div>
+      </div>
+    );
+  }
+  if (!order) {
+    return (
+      <div className="min-h-screen flex flex-col items-center px-2 py-10" style={{ background: currentTheme.background.primary }}>
+        <div className="w-full max-w-2xl mx-auto">
+          <SectionHeader title="Commande introuvable" subtitle="Aucune commande trouvée pour cet identifiant." />
+        </div>
+      </div>
+    );
+  }
   return (
     <div
       className="min-h-screen flex flex-col items-center px-2 py-10"
@@ -72,7 +75,7 @@ export default function SingleOrderPage() {
           title={`Commande #${order.id}`}
           subtitle={`Détails de la commande passée le ${order.date}`}
         />
-        <OrderCard {...order} />
+        <OrderCard {...order} status={order.statusLabel} statusColor={order.statusColor} />
         <div className="mt-8 mb-4">
           <h2
             className="text-lg font-semibold mb-2"
@@ -125,3 +128,41 @@ export default function SingleOrderPage() {
     </div>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const { req, params } = context;
+  const cookies = parseCookies(req.headers.cookie);
+  const token = cookies["authToken"];
+  const orderId = params?.orderId;
+  if (!token) {
+    return {
+      props: {
+        order: null,
+        error: "Vous devez être connecté pour voir cette commande.",
+      },
+    };
+  }
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5010"}/api/orders/${orderId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Erreur lors du chargement de la commande.");
+    }
+    const backendOrder = await response.json();
+    const order = mapBackendOrderToOrderDetails(backendOrder);
+    return { props: { order } };
+  } catch (err: any) {
+    return {
+      props: {
+        order: null,
+        error: err.message || "Erreur lors du chargement de la commande.",
+      },
+    };
+  }
+};

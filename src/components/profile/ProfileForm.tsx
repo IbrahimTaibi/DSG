@@ -23,11 +23,17 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ onSuccess }) => {
 
   useEffect(() => {
     if (user) {
+      let addressString = "";
+      if (typeof user.address === "string") {
+        addressString = user.address;
+      } else if (user.address && typeof user.address === "object") {
+        addressString = [user.address.address, user.address.city, user.address.state, user.address.zipCode].filter(Boolean).join(", ");
+      }
       setFormData({
         name: user.name || "",
         email: user.email || "",
         mobile: user.mobile || "",
-        address: user.address || "",
+        address: addressString,
       });
     }
   }, [user]);
@@ -45,11 +51,12 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ onSuccess }) => {
     }
 
     try {
-      await updateUser({
+      const updatePayload: { name: string; mobile?: string } = {
         name: formData.name.trim(),
         mobile: formData.mobile.trim() || undefined,
-        address: formData.address.trim() || undefined,
-      });
+      };
+      // Do not include address if it's not an object
+      await updateUser(updatePayload);
       setSuccess("Profil mis à jour avec succès");
       setIsEditing(false);
       onSuccess?.();

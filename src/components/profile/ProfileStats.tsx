@@ -1,5 +1,6 @@
 import React from "react";
 import { useDarkMode } from "@/contexts/DarkModeContext";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface ProfileStatsProps {
   stats?: {
@@ -12,6 +13,7 @@ interface ProfileStatsProps {
 
 const ProfileStats: React.FC<ProfileStatsProps> = ({ stats }) => {
   const { currentTheme } = useDarkMode();
+  const { format } = useCurrency();
 
   const defaultStats = {
     orders: 0,
@@ -81,7 +83,7 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ stats }) => {
     },
     {
       label: "Total dépensé",
-      value: `${defaultStats.totalSpent.toLocaleString("fr-FR")} €`,
+      value: format(defaultStats.totalSpent),
       icon: (
         <svg
           className="w-5 h-5"

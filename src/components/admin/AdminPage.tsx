@@ -13,6 +13,7 @@ import AdminTableContainer from "./AdminTableContainer";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import ExpandedRowActions from "./ExpandedRowActions";
 import { AdminPageProps, BulkAction } from "../../types/admin";
+import { formatCurrency } from "../../config/currency";
 
 export default function AdminPage<T extends { id: string }>({
   resource,
@@ -144,13 +145,7 @@ export default function AdminPage<T extends { id: string }>({
     );
   };
 
-  // Helper function to format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount);
-  };
+
 
   // Helper function to format date
   const formatDate = (dateString: string) => {

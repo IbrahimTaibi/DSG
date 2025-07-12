@@ -4,6 +4,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useDarkMode } from '@/contexts/DarkModeContext';
 import { Minus, Plus, X } from 'lucide-react';
 import { Product } from '../../types/product';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface CartItemProps {
   product: Product;
@@ -13,6 +14,7 @@ interface CartItemProps {
 export const CartItem: React.FC<CartItemProps> = ({ product, quantity }) => {
   const { updateQuantity, removeItem } = useCart();
   const { currentTheme } = useDarkMode();
+  const { format } = useCurrency();
   const [imageError, setImageError] = useState(false);
 
   const handleQuantityChange = (newQuantity: number) => {
@@ -125,7 +127,7 @@ export const CartItem: React.FC<CartItemProps> = ({ product, quantity }) => {
                 className="text-sm sm:text-base font-semibold"
                 style={{ color: currentTheme.text.primary }}
               >
-                ${(product.price ?? 0).toFixed(2)}
+                {format(product.price ?? 0)}
               </p>
             </div>
 
@@ -198,7 +200,7 @@ export const CartItem: React.FC<CartItemProps> = ({ product, quantity }) => {
               className="text-base sm:text-lg font-bold"
               style={{ color: currentTheme.interactive.primary }}
             >
-              ${((product.price ?? 0) * quantity).toFixed(2)}
+              {format((product.price ?? 0) * quantity)}
             </p>
           </div>
         </div>

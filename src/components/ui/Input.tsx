@@ -46,7 +46,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           style={{
             backgroundColor: currentTheme.background.secondary,
             color: currentTheme.text.primary,
-            border: `1px solid ${currentTheme.border.primary}`,
+            border: error
+              ? `1.5px solid ${currentTheme.status.error}`
+              : `1px solid ${currentTheme.border.primary}`,
             boxShadow: `0 1px 3px ${currentTheme.border.primary}20`,
             ...style
           }}

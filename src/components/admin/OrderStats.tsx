@@ -1,5 +1,6 @@
 import React from "react";
 import { useDarkMode } from "@/contexts/DarkModeContext";
+import { formatCurrency } from "@/config/currency";
 
 interface OrderStatsProps {
   totalOrders: number;
@@ -16,12 +17,7 @@ const OrderStats: React.FC<OrderStatsProps> = ({
 }) => {
   const { currentTheme } = useDarkMode();
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount);
-  };
+
 
   const stats = [
     {

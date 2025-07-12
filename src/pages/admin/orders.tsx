@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import AdminPage from "@/components/admin/AdminPage";
 import OrderStats from "@/components/admin/OrderStats";
 import { ordersResource, Order } from "@/config/adminResources";
+import { formatCurrency } from "@/config/currency";
 
 // Mock data (replace with real API calls)
 const mockOrders: Order[] = [
@@ -489,17 +490,15 @@ export default function AdminOrders() {
                   <tr>
                     <td><strong>Commande de produits alimentaires</strong><br><small>Assortiment de produits frais et secs</small></td>
                     <td>1</td>
-                    <td>${order.totalAmount.toFixed(2)} €</td>
-                    <td><strong>${order.totalAmount.toFixed(2)} €</strong></td>
+                    <td>${formatCurrency(order.totalAmount)}</td>
+                    <td><strong>${formatCurrency(order.totalAmount)}</strong></td>
                   </tr>
                 </tbody>
               </table>
               
               <div class="total-section">
                 <h3>Montant Total</h3>
-                <div class="total-amount">${order.totalAmount.toFixed(
-                  2,
-                )} €</div>
+                <div class="total-amount">${formatCurrency(order.totalAmount)}</div>
                 <div class="payment-status status-${
                   order.paymentStatus === "payé"
                     ? "paid"

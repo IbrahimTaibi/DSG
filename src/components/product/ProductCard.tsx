@@ -3,6 +3,7 @@ import { Product } from '@/types/product';
 import { useDarkMode } from '@/contexts/DarkModeContext';
 import { AddToCartButton } from '@/components/ui/AddToCartButton';
 import { Heart, Star } from 'lucide-react';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface ProductCardProps {
   product: Product & { discount?: number; oldPrice?: number; rating?: number };
@@ -13,6 +14,7 @@ const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1504674900247-0877d
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
   const { currentTheme } = useDarkMode();
+  const { format, formatPercentage } = useCurrency();
 
   return (
     <article
@@ -30,7 +32,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
         {/* Discount badge */}
         {product.discount && (
           <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg z-10 shadow">
-            -{product.discount}%
+            -{formatPercentage(product.discount)}
           </span>
         )}
         {/* Favorite icon */}
@@ -52,13 +54,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
           </h3>
           {typeof product.price === 'number' && (
             <span className="text-lg font-bold" style={{ color: currentTheme.interactive.primary }}>
-              ${product.price.toFixed(2)}
+              {format(product.price)}
             </span>
           )}
         </div>
         {/* Old price if available */}
         {product.oldPrice && (
-          <span className="text-xs line-through text-gray-400 mb-1">${product.oldPrice.toFixed(2)}</span>
+          <span className="text-xs line-through text-gray-400 mb-1">{format(product.oldPrice)}</span>
         )}
         {/* Rating if available */}
         {product.rating && (

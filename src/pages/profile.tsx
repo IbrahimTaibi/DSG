@@ -6,12 +6,18 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileForm from "@/components/profile/ProfileForm";
 import ProfileStats from "@/components/profile/ProfileStats";
 import ProfileActions from "@/components/profile/ProfileActions";
+import { useUserStats, useStoreStats, useDeliveryStats } from "@/hooks/useStats";
 
 export default function Profile() {
   const router = useRouter();
   const { user, isAuthenticated, logout, isLoading } = useAuth();
   const { currentTheme } = useDarkMode();
   const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Use the stats hooks
+  const { stats: userStats, loading: userStatsLoading, refresh: refreshUserStats } = useUserStats();
+  const { stats: storeStats, loading: storeStatsLoading } = useStoreStats();
+  const { stats: deliveryStats, loading: deliveryStatsLoading } = useDeliveryStats();
 
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
@@ -29,6 +35,7 @@ export default function Profile() {
   const handleProfileUpdate = () => {
     // Trigger a refresh of the profile data
     setRefreshKey((prev) => prev + 1);
+    refreshUserStats();
   };
 
   if (isLoading) {
@@ -96,14 +103,7 @@ export default function Profile() {
               <ProfileForm onSuccess={handleProfileUpdate} />
 
               {/* Profile Stats */}
-              <ProfileStats
-                stats={{
-                  orders: 12,
-                  reviews: 8,
-                  favorites: 24,
-                  totalSpent: 1250,
-                }}
-              />
+              <ProfileStats stats={userStats} />
             </div>
 
             {/* Right Column - Actions */}
@@ -155,7 +155,11 @@ export default function Profile() {
                     <div
                       className="text-2xl font-bold mb-1"
                       style={{ color: currentTheme.text.primary }}>
-                      45
+                      {storeStatsLoading ? (
+                        <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 rounded"></div>
+                      ) : (
+                        storeStats.activeProducts
+                      )}
                     </div>
                     <div
                       className="text-sm"
@@ -172,7 +176,11 @@ export default function Profile() {
                     <div
                       className="text-2xl font-bold mb-1"
                       style={{ color: currentTheme.text.primary }}>
-                      23
+                      {storeStatsLoading ? (
+                        <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 rounded"></div>
+                      ) : (
+                        storeStats.pendingOrders
+                      )}
                     </div>
                     <div
                       className="text-sm"
@@ -189,7 +197,11 @@ export default function Profile() {
                     <div
                       className="text-2xl font-bold mb-1"
                       style={{ color: currentTheme.text.primary }}>
-                      4.8
+                      {storeStatsLoading ? (
+                        <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 rounded"></div>
+                      ) : (
+                        storeStats.averageRating.toFixed(1)
+                      )}
                     </div>
                     <div
                       className="text-sm"
@@ -244,12 +256,16 @@ export default function Profile() {
                     <div
                       className="text-2xl font-bold mb-1"
                       style={{ color: currentTheme.text.primary }}>
-                      8
+                      {deliveryStatsLoading ? (
+                        <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 rounded"></div>
+                      ) : (
+                        deliveryStats.assignedOrders
+                      )}
                     </div>
                     <div
                       className="text-sm"
                       style={{ color: currentTheme.text.muted }}>
-                      Livraisons aujourd&apos;hui
+                      Commandes assignées
                     </div>
                   </div>
                   <div
@@ -261,12 +277,16 @@ export default function Profile() {
                     <div
                       className="text-2xl font-bold mb-1"
                       style={{ color: currentTheme.text.primary }}>
-                      156
+                      {deliveryStatsLoading ? (
+                        <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 rounded"></div>
+                      ) : (
+                        deliveryStats.deliveredOrders
+                      )}
                     </div>
                     <div
                       className="text-sm"
                       style={{ color: currentTheme.text.muted }}>
-                      Livraisons totales
+                      Livraisons terminées
                     </div>
                   </div>
                   <div
@@ -278,12 +298,16 @@ export default function Profile() {
                     <div
                       className="text-2xl font-bold mb-1"
                       style={{ color: currentTheme.text.primary }}>
-                      4.9
+                      {deliveryStatsLoading ? (
+                        <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 rounded"></div>
+                      ) : (
+                        deliveryStats.pendingDeliveries
+                      )}
                     </div>
                     <div
                       className="text-sm"
                       style={{ color: currentTheme.text.muted }}>
-                      Note moyenne
+                      Livraisons en cours
                     </div>
                   </div>
                 </div>

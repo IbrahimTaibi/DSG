@@ -6,8 +6,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/router';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import { ArrowLeft, CreditCard, Truck, Check } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, Check, AlertTriangle } from 'lucide-react';
 import { useDarkMode } from '@/contexts/DarkModeContext';
+import Modal from '@/components/ui/Modal';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface CheckoutForm {
   firstName: string;
@@ -25,9 +27,10 @@ interface CheckoutForm {
 }
 
 const CheckoutPage: NextPage = () => {
-  const { state } = useCart();
+  const { state, clearCart } = useCart();
   const { user } = useAuth();
   const { currentTheme } = useDarkMode();
+  const { format } = useCurrency();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
@@ -36,7 +39,9 @@ const CheckoutPage: NextPage = () => {
     lastName: user?.name?.split(' ').slice(1).join(' ') || '',
     email: user?.email || '',
     phone: user?.mobile || '',
-    address: user?.address || '',
+    address: typeof user?.address === 'object' && user?.address !== null
+      ? user.address.address || ''
+      : (user?.address || ''),
     city: '',
     state: '',
     zipCode: '',
@@ -45,6 +50,8 @@ const CheckoutPage: NextPage = () => {
     cvv: '',
     cardName: '',
   });
+  const [errorModal, setErrorModal] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   // Redirect if cart is empty or user is not authenticated
   React.useEffect(() => {
@@ -62,29 +69,69 @@ const CheckoutPage: NextPage = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const validateFields = () => {
+    const errors: { [key: string]: string } = {};
+    if (!formData.address.trim()) errors.address = 'Address is required';
+    if (!formData.city.trim()) errors.city = 'City is required';
+    if (!formData.state.trim()) errors.state = 'State is required';
+    if (!formData.zipCode.trim()) errors.zipCode = 'ZIP Code is required';
+    return errors;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors = validateFields();
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      setIsProcessing(false);
+      return;
+    }
+    console.log('Submitting order...');
     setIsProcessing(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Here you would typically send the order to your backend
-      // const response = await fetch('/api/orders', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     items: state.items,
-      //     total: state.total * 1.1,
-      //     shipping: formData,
-      //     payment: {
-      //       cardNumber: formData.cardNumber.slice(-4),
-      //       cardName: formData.cardName,
-      //     }
-      //   })
-      // });
+      // Send the order to the backend
+      const payload = {
+        products: state.items.map(item => ({
+          product: item.product._id,
+          quantity: item.quantity,
+        })),
+        address: {
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+        },
+      };
+      console.log('Order payload:', payload);
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+      const fetchUrl = `${apiBase}/api/orders`;
+      console.log('Sending order to:', fetchUrl);
+      const response = await fetch(fetchUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      console.log('API response:', response);
 
+      if (!response.ok) {
+        if (response.status === 401) {
+          setErrorModal({ open: true, message: 'Vous devez être connecté pour passer une commande.' });
+          return;
+        } else if (response.status === 403) {
+          setErrorModal({ open: true, message: 'Seuls les utilisateurs peuvent passer des commandes.' });
+          return;
+        } else {
+          setErrorModal({ open: true, message: 'Une erreur est survenue lors de la passation de votre commande. Veuillez réessayer.' });
+          return;
+        }
+      }
+
+      clearCart();
       setOrderPlaced(true);
     } catch (error) {
       console.error('Error placing order:', error);
@@ -95,7 +142,7 @@ const CheckoutPage: NextPage = () => {
   };
 
   const handleContinueShopping = () => {
-    router.push('/categories');
+    router.push('/category/all');
   };
 
   if (orderPlaced) {
@@ -252,6 +299,7 @@ const CheckoutPage: NextPage = () => {
                     value={formData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
                     required
+                    error={fieldErrors.address}
                   />
                 </div>
                 
@@ -261,18 +309,21 @@ const CheckoutPage: NextPage = () => {
                     value={formData.city}
                     onChange={(e) => handleInputChange('city', e.target.value)}
                     required
+                    error={fieldErrors.city}
                   />
                   <Input
                     label="State"
                     value={formData.state}
                     onChange={(e) => handleInputChange('state', e.target.value)}
                     required
+                    error={fieldErrors.state}
                   />
                   <Input
                     label="ZIP Code"
                     value={formData.zipCode}
                     onChange={(e) => handleInputChange('zipCode', e.target.value)}
                     required
+                    error={fieldErrors.zipCode}
                   />
                 </div>
               </div>
@@ -362,7 +413,7 @@ const CheckoutPage: NextPage = () => {
                         className="font-medium"
                         style={{ color: currentTheme.text.primary }}
                       >
-                        {((item.product.price ?? 0) * item.quantity).toFixed(2)}
+                        {format((item.product.price ?? 0) * item.quantity)}
                       </span>
                     </div>
                   ))}
@@ -378,7 +429,7 @@ const CheckoutPage: NextPage = () => {
                       className="font-medium"
                       style={{ color: currentTheme.text.primary }}
                     >
-                      ${subtotal.toFixed(2)}
+                      {format(subtotal)}
                     </span>
                   </div>
                   
@@ -396,7 +447,7 @@ const CheckoutPage: NextPage = () => {
                       className="font-medium"
                       style={{ color: currentTheme.text.primary }}
                     >
-                      ${tax.toFixed(2)}
+                      {format(tax)}
                     </span>
                   </div>
                   
@@ -407,7 +458,7 @@ const CheckoutPage: NextPage = () => {
                     <div className="flex justify-between text-base font-medium">
                       <span style={{ color: currentTheme.text.primary }}>Total</span>
                       <span style={{ color: currentTheme.text.primary }}>
-                        ${total.toFixed(2)}
+                        {format(total)}
                       </span>
                     </div>
                   </div>
@@ -420,7 +471,7 @@ const CheckoutPage: NextPage = () => {
                     size="lg"
                     disabled={isProcessing}
                   >
-                    {isProcessing ? 'Processing...' : `Place Order - $${total.toFixed(2)}`}
+                    {isProcessing ? 'Processing...' : `Place Order - ${format(total)}`}
                   </Button>
                 </form>
               </div>
@@ -428,6 +479,35 @@ const CheckoutPage: NextPage = () => {
           </div>
         </div>
       </div>
+      {/* Error Modal */}
+      <Modal isOpen={errorModal.open} onClose={() => setErrorModal({ open: false, message: '' })} title="Erreur">
+        <div className="flex flex-col items-center justify-center">
+          <div
+            className="flex items-center justify-center mb-4 rounded-full"
+            style={{
+              backgroundColor: `${currentTheme.status.error}15`,
+              width: 64,
+              height: 64,
+            }}
+          >
+            <AlertTriangle size={36} style={{ color: currentTheme.status.error }} />
+          </div>
+          <p className="mb-6 text-base font-medium text-center" style={{ color: currentTheme.text.primary }}>
+            {errorModal.message}
+          </p>
+          <Button
+            onClick={() => setErrorModal({ open: false, message: '' })}
+            size="md"
+            style={{
+              backgroundColor: currentTheme.status.error,
+              color: currentTheme.text.inverse,
+              border: 'none',
+            }}
+          >
+            Fermer
+          </Button>
+        </div>
+      </Modal>
     </>
   );
 };

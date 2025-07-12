@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useDarkMode } from "@/contexts/DarkModeContext";
+import { formatCurrency } from "@/config/currency";
 
 interface OrderStatsData {
   month: string;
@@ -68,7 +69,7 @@ export default function OrderStatsBarChart({
                     : currentTheme.status.info,
               }}>
               {entry.name}:{" "}
-              {entry.dataKey === "revenue" ? `${entry.value}€` : entry.value}
+              {entry.dataKey === "revenue" ? formatCurrency(entry.value) : entry.value}
             </p>
           ))}
         </div>
@@ -128,7 +129,7 @@ export default function OrderStatsBarChart({
           <Bar
             dataKey="revenue"
             fill={currentTheme.status.info}
-            name="Revenus (€)"
+            name="Revenus (DT)"
             radius={[4, 4, 0, 0]}
           />
         </BarChart>
