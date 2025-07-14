@@ -2,11 +2,9 @@ import { useDarkMode } from "@/contexts/DarkModeContext";
 import SectionHeader from "@/components/ui/SectionHeader";
 import OrderCard, { OrderCardProps } from "@/components/ui/OrderCard";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React from "react";
 import { GetServerSideProps } from "next";
 import { parseCookies } from "@/utils/cookie";
-import { useCurrency } from "@/hooks/useCurrency";
 
 interface OrdersPageProps {
   orders: OrderCardProps[];
@@ -15,8 +13,6 @@ interface OrdersPageProps {
 
 export default function OrdersPage({ orders, error }: OrdersPageProps) {
   const { currentTheme } = useDarkMode();
-  const { format } = useCurrency();
-  
   return (
     <div
       className="min-h-screen flex flex-col items-center px-2 py-10"
@@ -103,31 +99,37 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       throw new Error("Erreur lors du chargement des commandes.");
     }
     const backendOrders = await response.json();
-    const orders: OrderCardProps[] = backendOrders.map((order: any) => ({
-      id: order.orderId || order._id,
-      date: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "",
-      status:
-        order.status === "delivered"
-          ? "Livré"
-          : order.status === "pending"
-          ? "En cours"
-          : order.status === "cancelled"
-          ? "Annulée"
-          : order.status,
-      total: order.total || 0, // Pass as number, OrderCard will format it
-      items: Array.isArray(order.products)
-        ? order.products.map((p: any) => ({
-            name: p.product?.name || "Produit inconnu",
-            qty: p.quantity,
-          }))
-        : [],
-    }));
+    const orders: OrderCardProps[] = Array.isArray(backendOrders)
+      ? backendOrders.map((order: Record<string, unknown>) => ({
+          id: String(order.orderId || order._id || ''),
+          date: order.createdAt && typeof order.createdAt === 'string' ? new Date(order.createdAt).toLocaleDateString() : "",
+          status:
+            order.status === "delivered"
+              ? "Livré"
+              : order.status === "pending"
+              ? "En cours"
+              : order.status === "cancelled"
+              ? "Annulée"
+              : (order.status as string),
+          total: typeof order.total === 'number' ? order.total : 0,
+          items: Array.isArray(order.products)
+            ? order.products.map((p: Record<string, unknown>) => ({
+                name: p.product && typeof p.product === 'object' && 'name' in p.product ? (p.product as { name?: string }).name || "Produit inconnu" : "Produit inconnu",
+                qty: typeof p.quantity === 'number' ? p.quantity : 0,
+              }))
+            : [],
+        }))
+      : [];
     return { props: { orders } };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    let errorMsg = "Erreur lors du chargement des commandes.";
+    if (err && typeof err === 'object' && 'message' in err && typeof (err as { message?: string }).message === 'string') {
+      errorMsg = (err as { message: string }).message;
+    }
     return {
       props: {
         orders: [],
-        error: err.message || "Erreur lors du chargement des commandes.",
+        error: errorMsg,
       },
     };
   }

@@ -15,7 +15,7 @@ export default function Profile() {
   const [refreshKey, setRefreshKey] = useState(0);
   
   // Use the stats hooks
-  const { stats: userStats, loading: userStatsLoading, refresh: refreshUserStats } = useUserStats();
+  const { stats: userStats, refresh: refreshUserStats } = useUserStats();
   const { stats: storeStats, loading: storeStatsLoading } = useStoreStats();
   const { stats: deliveryStats, loading: deliveryStatsLoading } = useDeliveryStats();
 

@@ -212,8 +212,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
     const product = await res.json();
     return { props: { product } };
-  } catch (err: any) {
-    return { props: { product: null, error: err?.message || 'Erreur lors du chargement du produit.' } };
+  } catch (err: unknown) {
+    let errorMsg = 'Erreur lors du chargement du produit.';
+    if (err && typeof err === 'object' && 'message' in err && typeof (err as { message?: string }).message === 'string') {
+      errorMsg = (err as { message: string }).message;
+    }
+    return { props: { product: null, error: errorMsg } };
   }
 };
 

@@ -6,11 +6,13 @@ const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
 // Helper to reset the module-level cache in useCategories
-function resetCategoryCache() {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const useCategoriesModule = require('./useCategories');
+async function resetCategoryCache() {
+  const useCategoriesModule = await import('./useCategories');
+  // @ts-expect-error: test needs access to private cache
   useCategoriesModule.categoriesCache = null;
+  // @ts-expect-error: test needs access to private cache
   useCategoriesModule.categoryTreeCache = null;
+  // @ts-expect-error: test needs access to private cache
   useCategoriesModule.cacheTimestamp = 0;
 }
 

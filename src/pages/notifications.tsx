@@ -2,14 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useDarkMode } from "../contexts/DarkModeContext";
 import { useNotifications } from "../contexts/NotificationContext";
 
-interface Notification {
-  _id: string;
-  type: string;
-  data: { message?: string; [key: string]: unknown };
-  read: boolean;
-  createdAt: string;
-}
-
 const NotificationsPage: React.FC = () => {
   const { currentTheme } = useDarkMode();
   const { notifications, fetchNotifications } = useNotifications();

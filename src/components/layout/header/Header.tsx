@@ -7,18 +7,8 @@ import NotificationBell from "../../ui/NotificationBell";
 import DashboardButton from "../../ui/DashboardButton";
 import { CartIcon } from "../../ui/CartIcon";
 import { useRef } from "react";
-import axios from "axios";
 import React from "react";
 
-
-// Notification type matches backend model
-interface Notification {
-  _id: string;
-  type: string;
-  data: { message?: string; [key: string]: unknown };
-  read: boolean;
-  createdAt: string;
-}
 
 export default function Header() {
   const { darkMode, toggleDarkMode, currentTheme } = useDarkMode();

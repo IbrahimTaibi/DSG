@@ -67,7 +67,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     return () => {
       disconnect();
     };
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, connect, disconnect]);
 
   const value: SocketContextType = {
     socket,

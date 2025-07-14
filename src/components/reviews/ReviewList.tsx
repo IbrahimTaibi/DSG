@@ -7,12 +7,12 @@ interface ReviewListProps {
   reviews: Review[];
   average: number;
   count: number;
-  loading?: boolean;
+  // loading?: boolean; // Removed unused prop
 }
 
 const REVIEWS_TO_SHOW = 3;
 
-export const ReviewList: React.FC<ReviewListProps> = ({ reviews, average, count, loading }) => {
+export const ReviewList: React.FC<ReviewListProps> = ({ reviews, average, count }) => {
   const { currentTheme } = useDarkMode();
   const [showAll, setShowAll] = useState(false);
   const visibleReviews = showAll ? reviews : reviews.slice(0, REVIEWS_TO_SHOW);
@@ -45,7 +45,7 @@ export const ReviewList: React.FC<ReviewListProps> = ({ reviews, average, count,
           className="mt-2 px-3 py-1 rounded bg-gray-100 dark:bg-gray-800 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
           onClick={() => setShowAll(true)}
         >
-          Afficher plus d'avis
+          Afficher plus d&apos;avis
         </button>
       )}
     </section>

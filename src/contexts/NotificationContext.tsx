@@ -122,7 +122,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     return () => {
       socket.off('new_notification', handleNewNotification);
     };
-  }, [socket, isConnected]);
+  }, [socket, isConnected, addNotification]);
 
   // Fetch notifications on mount and when authentication changes
   useEffect(() => {
@@ -131,7 +131,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     } else {
       clearNotifications();
     }
-  }, [isAuthenticated, fetchNotifications]);
+  }, [isAuthenticated, fetchNotifications, clearNotifications]);
 
   const value: NotificationContextType = {
     notifications,

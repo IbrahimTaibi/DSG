@@ -34,33 +34,33 @@ export interface OrderDetails extends OrderCardProps {
   statusLabel: string;
 }
 
-export function mapBackendOrderToOrderDetails(order: any): OrderDetails {
-  const { label: statusLabel, color: statusColor } = getOrderStatusLabelAndColor(order.status);
+export function mapBackendOrderToOrderDetails(order: Record<string, unknown>): OrderDetails {
+  const { label: statusLabel, color: statusColor } = getOrderStatusLabelAndColor(order.status as string);
   // Timeline logic: you may want to adjust this based on your backend statusHistory
   const timeline: TimelineStep[] = [
     {
       label: "Commande passée",
-      date: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "",
+      date: order.createdAt ? new Date(order.createdAt as string).toLocaleDateString() : "",
       done: true,
     },
     {
       label: "En préparation",
-      date: order.statusHistory?.find((s: any) => s.status === "pending")?.changedAt
-        ? new Date(order.statusHistory.find((s: any) => s.status === "pending").changedAt).toLocaleDateString()
+      date: Array.isArray(order.statusHistory) && order.statusHistory.find((s: Record<string, unknown>) => s.status === "pending")?.changedAt
+        ? new Date((order.statusHistory.find((s: Record<string, unknown>) => s.status === "pending") as Record<string, unknown>).changedAt as string).toLocaleDateString()
         : "",
-      done: ["pending", "delivering", "delivered"].includes(order.status),
+      done: ["pending", "delivering", "delivered"].includes(order.status as string),
     },
     {
       label: "En cours de livraison",
-      date: order.statusHistory?.find((s: any) => s.status === "delivering")?.changedAt
-        ? new Date(order.statusHistory.find((s: any) => s.status === "delivering").changedAt).toLocaleDateString()
+      date: Array.isArray(order.statusHistory) && order.statusHistory.find((s: Record<string, unknown>) => s.status === "delivering")?.changedAt
+        ? new Date((order.statusHistory.find((s: Record<string, unknown>) => s.status === "delivering") as Record<string, unknown>).changedAt as string).toLocaleDateString()
         : "",
-      done: ["delivering", "delivered"].includes(order.status),
+      done: ["delivering", "delivered"].includes(order.status as string),
     },
     {
       label: "Livré",
-      date: order.statusHistory?.find((s: any) => s.status === "delivered")?.changedAt
-        ? new Date(order.statusHistory.find((s: any) => s.status === "delivered").changedAt).toLocaleDateString()
+      date: Array.isArray(order.statusHistory) && order.statusHistory.find((s: Record<string, unknown>) => s.status === "delivered")?.changedAt
+        ? new Date((order.statusHistory.find((s: Record<string, unknown>) => s.status === "delivered") as Record<string, unknown>).changedAt as string).toLocaleDateString()
         : "",
       done: order.status === "delivered",
     },
@@ -68,20 +68,25 @@ export function mapBackendOrderToOrderDetails(order: any): OrderDetails {
 
   // Address formatting
   const address = order.address && typeof order.address === "object"
-    ? [order.address.address, order.address.city, order.address.state, order.address.zipCode].filter(Boolean).join(", ")
+    ? (() => {
+        const addr = order.address as Record<string, string | undefined>;
+        return [addr.address, addr.city, addr.state, addr.zipCode]
+          .filter((v) => typeof v === 'string' && v.length > 0)
+          .join(", ");
+      })()
     : "";
 
   return {
-    id: order.orderId || order._id,
-    date: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "",
+    id: String(order.orderId || order._id || ''),
+    date: order.createdAt ? new Date(order.createdAt as string).toLocaleDateString() : "",
     status: statusLabel,
     statusColor,
     statusLabel, // Add this line
-    total: order.total ? formatCurrency(order.total) : formatCurrency(0),
+    total: order.total ? formatCurrency(order.total as number) : formatCurrency(0),
     items: Array.isArray(order.products)
-      ? order.products.map((p: any) => ({
-          name: p.product?.name || "Produit inconnu",
-          qty: p.quantity,
+      ? (order.products as Array<Record<string, unknown>>).map((p) => ({
+          name: p.product && typeof p.product === 'object' && 'name' in p.product ? (p.product as Record<string, unknown>).name as string : "Produit inconnu",
+          qty: p.quantity as number,
         }))
       : [],
     address,

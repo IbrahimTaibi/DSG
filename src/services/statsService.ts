@@ -43,7 +43,7 @@ export const fetchUserStats = async (token: string): Promise<UserStats> => {
     const orders = await response.json();
     
     // Calculate stats from orders
-    const totalSpent = orders.reduce((sum: number, order: any) => sum + (order.total || 0), 0);
+    const totalSpent = orders.reduce((sum: number, order: Record<string, unknown>) => sum + (typeof order.total === 'number' ? order.total : 0), 0);
     const ordersCount = orders.length;
     
     // For now, we'll use placeholder values for reviews and favorites
@@ -92,7 +92,7 @@ export const fetchStoreStats = async (token: string): Promise<StoreStats> => {
       };
     }
     
-    const activeProducts = products.filter((product: any) => product.status === 'active').length;
+    const activeProducts = products.filter((product: Record<string, unknown>) => product.status === 'active').length;
 
     // Fetch orders for the store
     const ordersResponse = await fetch(`${API_CONFIG.BASE_URL}/api/orders/my`, {
@@ -118,7 +118,7 @@ export const fetchStoreStats = async (token: string): Promise<StoreStats> => {
       };
     }
     
-    const pendingOrders = orders.filter((order: any) => 
+    const pendingOrders = orders.filter((order: Record<string, unknown>) => 
       order.status === 'pending' || order.status === 'waiting_for_delivery'
     ).length;
 
@@ -164,8 +164,8 @@ export const fetchDeliveryStats = async (token: string): Promise<DeliveryStats> 
     }
     
     const assignedOrders = orders.length;
-    const deliveredOrders = orders.filter((order: any) => order.status === 'delivered').length;
-    const pendingDeliveries = orders.filter((order: any) => 
+    const deliveredOrders = orders.filter((order: Record<string, unknown>) => order.status === 'delivered').length;
+    const pendingDeliveries = orders.filter((order: Record<string, unknown>) => 
       order.status === 'delivering' || order.status === 'waiting_for_delivery'
     ).length;
 

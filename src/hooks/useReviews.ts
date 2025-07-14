@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { fetchProductReviews, submitReview, ProductReviewsResult } from '@/services/reviewService';
-import { Review } from '@/types/review';
 
 export function useProductReviews(productId: string) {
   const [data, setData] = useState<ProductReviewsResult | null>(null);

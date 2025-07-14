@@ -1,6 +1,6 @@
 import { useDarkMode } from "@/contexts/DarkModeContext";
 import SectionHeader from "@/components/ui/SectionHeader";
-import OrderCard, { OrderCardProps } from "@/components/ui/OrderCard";
+import OrderCard from "@/components/ui/OrderCard";
 import React from "react";
 import { GetServerSideProps } from "next";
 import { parseCookies } from "@/utils/cookie";
@@ -157,11 +157,15 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const backendOrder = await response.json();
     const order = mapBackendOrderToOrderDetails(backendOrder);
     return { props: { order } };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    let errorMsg = "Erreur lors du chargement de la commande.";
+    if (err && typeof err === 'object' && 'message' in err && typeof (err as { message?: string }).message === 'string') {
+      errorMsg = (err as { message: string }).message;
+    }
     return {
       props: {
         order: null,
-        error: err.message || "Erreur lors du chargement de la commande.",
+        error: errorMsg,
       },
     };
   }

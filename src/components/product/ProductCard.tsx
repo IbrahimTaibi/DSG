@@ -5,6 +5,7 @@ import { AddToCartButton } from '@/components/ui/AddToCartButton';
 import { ReviewStars } from '@/components/reviews/ReviewStars';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useRouter } from 'next/router';
+import Image from 'next/image';
 
 interface ProductCardProps {
   product: Product;
@@ -37,11 +38,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
     >
       {/* Image */}
       <div className="relative w-full flex items-center justify-center" style={{ height: 200, background: currentTheme.background.secondary }}>
-        <img
+        <Image
           src={product.image || PLACEHOLDER_IMAGE}
           alt={product.name}
           className="object-contain w-full h-full transition-transform duration-300 group-hover:scale-105"
           style={{ width: '100%', height: 200, display: 'block' }}
+          width={400}
+          height={200}
           loading="lazy"
         />
       </div>
