@@ -2,11 +2,12 @@ import React from 'react';
 import { Product } from '@/types/product';
 import { useDarkMode } from '@/contexts/DarkModeContext';
 import { AddToCartButton } from '@/components/ui/AddToCartButton';
-import { Heart, Star } from 'lucide-react';
+import { ReviewStars } from '@/components/reviews/ReviewStars';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useRouter } from 'next/router';
 
 interface ProductCardProps {
-  product: Product & { discount?: number; oldPrice?: number; rating?: number };
+  product: Product;
   onClick?: () => void;
 }
 
@@ -14,66 +15,69 @@ const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1504674900247-0877d
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
   const { currentTheme } = useDarkMode();
-  const { format, formatPercentage } = useCurrency();
+  const { format } = useCurrency();
+  const router = useRouter();
+
+  const handleCardClick = () => {
+    if (onClick) return onClick();
+    router.push(`/products/${product._id || product.id}`);
+  };
 
   return (
     <article
-      className="flex flex-col rounded-3xl shadow-lg transition-transform duration-200 hover:-translate-y-1 hover:shadow-2xl focus-within:shadow-2xl focus-within:-translate-y-1 outline-none cursor-pointer group border bg-white overflow-hidden"
+      className="flex flex-col rounded-xl border transition-shadow duration-200 hover:shadow-lg focus-within:shadow-lg outline-none cursor-pointer group bg-white dark:bg-gray-900 overflow-hidden"
       tabIndex={0}
       style={{
         backgroundColor: currentTheme.background.card,
         border: `1px solid ${currentTheme.border.primary}`,
       }}
       aria-label={product.name}
-      onClick={onClick}
-      role={onClick ? 'button' : undefined}
+      onClick={handleCardClick}
+      role={onClick ? 'button' : 'link'}
     >
-      <div className="relative w-full" style={{ height: 180, background: currentTheme.background.secondary }}>
-        {/* Discount badge */}
-        {product.discount && (
-          <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg z-10 shadow">
-            -{formatPercentage(product.discount)}
-          </span>
-        )}
-        {/* Favorite icon */}
-        <button className="absolute top-3 right-3 bg-white/80 rounded-full p-1 z-10 hover:bg-white shadow transition">
-          <Heart className="w-5 h-5 text-gray-400 hover:text-red-500" />
-        </button>
+      {/* Image */}
+      <div className="relative w-full flex items-center justify-center" style={{ height: 200, background: currentTheme.background.secondary }}>
         <img
           src={product.image || PLACEHOLDER_IMAGE}
           alt={product.name}
-          className="object-cover object-center w-full h-full rounded-3xl"
-          style={{ width: '100%', height: 180, display: 'block' }}
+          className="object-contain w-full h-full transition-transform duration-300 group-hover:scale-105"
+          style={{ width: '100%', height: 200, display: 'block' }}
           loading="lazy"
         />
       </div>
-      <div className="flex flex-col flex-1 w-full p-4 gap-2">
-        <div className="flex items-center justify-between mb-1">
-          <h3 className="text-base font-bold truncate" style={{ color: currentTheme.text.primary }}>
-            {product.name}
-          </h3>
-          {typeof product.price === 'number' && (
-            <span className="text-lg font-bold" style={{ color: currentTheme.interactive.primary }}>
-              {format(product.price)}
-            </span>
-          )}
-        </div>
-        {/* Old price if available */}
-        {product.oldPrice && (
-          <span className="text-xs line-through text-gray-400 mb-1">{format(product.oldPrice)}</span>
+      {/* Info */}
+      <div className="flex flex-col gap-1 px-4 py-4 flex-1">
+        {/* Name */}
+        <h3 className="text-base font-semibold truncate mb-1" style={{ color: currentTheme.text.primary }}>
+          {product.name}
+        </h3>
+        {/* Category */}
+        {product.category?.name && (
+          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium mb-1" style={{ background: currentTheme.background.secondary, color: currentTheme.text.muted }}>
+            {product.category.name}
+          </span>
         )}
-        {/* Rating if available */}
-        {product.rating && (
-          <div className="flex items-center gap-1 text-sm text-gray-500 mb-1">
-            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-            <span>{product.rating.toFixed(1)}</span>
+        {/* Rating */}
+        {(product.averageRating || product.reviewCount) && (
+          <div className="flex items-center gap-1 mb-1">
+            <ReviewStars value={product.averageRating || 0} readOnly size={14} />
+            {product.reviewCount !== undefined && (
+              <span className="text-xs text-gray-400">({product.reviewCount})</span>
+            )}
           </div>
         )}
-        <div className="flex justify-end mt-2">
+        {/* Price */}
+        {typeof product.price === 'number' && (
+          <span className="text-lg font-bold mb-2" style={{ color: currentTheme.interactive.primary }}>
+            {format(product.price)}
+          </span>
+        )}
+        {/* Add to Cart Button */}
+        <div className="mt-auto pt-2">
           <AddToCartButton
             product={product}
-            className="!w-auto !min-w-0 px-5 py-1 text-sm font-semibold rounded-xl bg-purple-600 hover:bg-purple-700 text-white shadow"
-            variant="primary"
+            className="w-full px-4 py-2 text-sm font-medium rounded-lg border border-purple-200 dark:border-purple-800 bg-transparent hover:bg-purple-50 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-200 transition"
+            variant="outline"
             size="md"
             customLabel="Ajouter au panier"
           />

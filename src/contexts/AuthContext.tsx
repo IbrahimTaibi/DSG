@@ -66,9 +66,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Helper function to set auth cookie
+  const setAuthCookie = (token: string) => {
+    if (typeof document !== 'undefined') {
+      document.cookie = `authToken=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+    }
+  };
+
+  // Helper function to clear auth cookie
+  const clearAuthCookie = () => {
+    if (typeof document !== 'undefined') {
+      document.cookie = "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("authToken");
     if (token) {
+      // Ensure cookie is set for SSR
+      if (typeof document !== 'undefined') {
+        document.cookie = `authToken=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+      }
       validateToken(token);
     } else {
       setIsLoading(false);
@@ -105,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
       if (response.data && response.data.token) {
         localStorage.setItem("authToken", response.data.token);
+        setAuthCookie(response.data.token);
         setUser(response.data.user || null);
         return { success: true };
       } else {
@@ -146,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
       if (response.data && response.data.token) {
         localStorage.setItem("authToken", response.data.token);
+        setAuthCookie(response.data.token);
         setUser(response.data.user || null);
         return { success: true };
       } else {
@@ -183,6 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     localStorage.removeItem("authToken");
+    clearAuthCookie();
     setUser(null);
   }, []);
 

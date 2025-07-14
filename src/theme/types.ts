@@ -69,6 +69,10 @@ export type Theme = {
   border: ThemeBorder;
   interactive: ThemeInteractive;
   status: ThemeStatus;
+  rating: {
+    filled: string;
+    empty: string;
+  };
 };
 
 export type ThemeMode = "light" | "dark";

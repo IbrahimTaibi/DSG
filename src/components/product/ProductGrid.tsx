@@ -29,7 +29,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, emptyMessage
         className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
         style={{ background: 'none' }}
       >
-        {products.map((product) => (
+        {products.map((product, idx) => (
           <ProductCard
             key={product._id || product.id}
             product={product}

@@ -26,13 +26,6 @@ const LoginForm = () => {
     setIsSubmitting(true);
     try {
       const result = await login(formData.mobile, formData.password);
-      if (result.success) {
-        // Set auth token as a cookie for SSR
-        const token = localStorage.getItem("authToken");
-        if (token) {
-          document.cookie = `authToken=${token}; path=/;`;
-        }
-      }
       if (!result.success) {
         // Error will be handled by AuthContext
       }

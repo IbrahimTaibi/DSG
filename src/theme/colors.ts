@@ -143,6 +143,11 @@ export const lightTheme = {
     error: "#f43f5e",
     info: "#27445d",
   },
+
+  rating: {
+    filled: '#facc15', // yellow-400
+    empty: '#d1d5db',  // gray-300
+  },
 } as const;
 
 export const darkTheme = {
@@ -187,5 +192,10 @@ export const darkTheme = {
     warning: "#fbbf24",
     error: "#fb7185",
     info: "#71bbb2",
+  },
+
+  rating: {
+    filled: '#facc15', // yellow-400
+    empty: '#374151',  // gray-700
   },
 } as const;
