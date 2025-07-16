@@ -1,10 +1,10 @@
 import React from "react";
 import { useDarkMode } from "@/contexts/DarkModeContext";
-import Input from "../ui/Input";
-import Button from "../ui/Button";
+import Input from "../../ui/Input";
+import Button from "../../ui/Button";
 import { fetchUsers } from "@/services/userService";
 import { fetchAllProducts } from "@/services/productService";
-import AutocompleteInput from "../ui/AutocompleteInput";
+import AutocompleteInput from "../../ui/AutocompleteInput";
 
 interface ProductItem {
   productId: string;

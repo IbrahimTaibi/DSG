@@ -1,6 +1,6 @@
 import React from "react";
-import Button from "../ui/Button";
-import Dropdown from "../ui/Dropdown";
+import Button from "../../ui/Button";
+import Dropdown from "../../ui/Dropdown";
 
 export interface BulkAction {
   label: React.ReactNode;

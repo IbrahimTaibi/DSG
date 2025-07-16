@@ -1,7 +1,7 @@
 import React from "react";
-import { useAdminProtection } from "../../hooks/useAdminProtection";
-import ErrorPage from "../ui/ErrorPage";
-import { useDarkMode } from "../../contexts/DarkModeContext";
+import { useAdminProtection } from "../../../hooks/useAdminProtection";
+import ErrorPage from "../../ui/ErrorPage";
+import { useDarkMode } from "../../../contexts/DarkModeContext";
 import { Shield, Loader2 } from "lucide-react";
 
 interface AdminProtectedProps {

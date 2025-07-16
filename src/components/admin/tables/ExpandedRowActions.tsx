@@ -1,15 +1,15 @@
 import React from "react";
 import { useDarkMode } from "@/contexts/DarkModeContext";
 import { AdminResource } from "@/types/admin";
-import ProductDetailsModal from "../ui/ProductDetailsModal";
+import ProductDetailsModal from "../../ui/ProductDetailsModal";
 import { useRouter } from "next/router";
 import Modal from "@/components/ui/Modal";
 import { fetchDeliveryAgents, assignDeliveryAgent, updateOrderStatus } from "@/services/userService";
 import { DeliveryAgent as BaseDeliveryAgent } from "@/services/userService";
-import OrderStatusChangeModal from "@/components/admin/OrderStatusChangeModal";
+import OrderStatusChangeModal from "@/components/admin/modals/OrderStatusChangeModal";
 import ErrorModal from "@/components/ui/ErrorModal";
-import DeliveryAgentSelector from "@/components/admin/DeliveryAgentSelector";
-import AdminActionButtons, { AdminActionButton } from "@/components/admin/AdminActionButtons";
+import DeliveryAgentSelector from "@/components/admin/modals/DeliveryAgentSelector";
+import AdminActionButtons, { AdminActionButton } from "@/components/admin/tables/AdminActionButtons";
 
 interface DeliveryAgent extends BaseDeliveryAgent {
   _id?: string;

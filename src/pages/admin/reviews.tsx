@@ -1,7 +1,7 @@
 import React from "react";
 import { useRouter } from "next/router";
-import AdminPage from "@/components/admin/AdminPage";
-import ReviewStats from "@/components/admin/ReviewStats";
+import AdminPage from "@/components/admin/dashboard/AdminPage";
+import ReviewStats from "@/components/admin/stats/ReviewStats";
 import { reviewsResource, Review } from "@/config/adminResources";
 
 // Mock data (replace with real API calls)

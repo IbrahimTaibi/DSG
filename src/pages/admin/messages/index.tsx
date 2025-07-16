@@ -1,11 +1,11 @@
-import AdminLayout from "@/components/admin/AdminLayout";
+import AdminLayout from "@/components/admin/layout/AdminLayout";
 import SectionHeader from "@/components/ui/SectionHeader";
 import React from "react";
 import { useDarkMode } from "@/contexts/DarkModeContext";
 import Button from "@/components/ui/Button";
 import Table, { TableColumn } from "@/components/ui/Table";
 import { useRouter } from "next/router";
-import AdminTableContainer from "@/components/admin/AdminTableContainer";
+import AdminTableContainer from "@/components/admin/tables/AdminTableContainer";
 
 interface Message {
   id: string;

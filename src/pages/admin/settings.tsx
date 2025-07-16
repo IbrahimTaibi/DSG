@@ -1,4 +1,4 @@
-import AdminLayout from "@/components/admin/AdminLayout";
+import AdminLayout from "@/components/admin/layout/AdminLayout";
 import SectionHeader from "@/components/ui/SectionHeader";
 import React from "react";
 import { useDarkMode } from "@/contexts/DarkModeContext";

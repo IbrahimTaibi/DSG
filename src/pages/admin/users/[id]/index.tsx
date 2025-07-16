@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import AdminLayout from "@/components/admin/AdminLayout";
+import AdminLayout from "@/components/admin/layout/AdminLayout";
 import { useDarkMode } from "@/contexts/DarkModeContext";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileStats from "@/components/profile/ProfileStats";

@@ -1,19 +1,19 @@
 import React from "react";
-import { useDarkMode } from "../../contexts/DarkModeContext";
-import AdminLayout from "./AdminLayout";
-import SectionHeader from "../ui/SectionHeader";
-import SearchBar from "../ui/SearchBar";
-import Table from "../ui/Table";
-import Pagination from "../ui/Pagination";
-import Button from "../ui/Button";
-import AdminActionBar from "./AdminActionBar";
-import BulkActionsDropdown from "./BulkActionsDropdown";
-import AdminTableContainer from "./AdminTableContainer";
-import ConfirmDeleteModal from "./ConfirmDeleteModal";
-import { AdminPageProps, BulkAction } from "../../types/admin";
-import { formatCurrency } from "../../config/currency";
-import Modal from "../ui/Modal";
-import NewOrderForm from "./NewOrderForm";
+import { useDarkMode } from "@/contexts/DarkModeContext";
+import AdminLayout from "@/components/admin/layout/AdminLayout";
+import SectionHeader from "@/components/ui/SectionHeader";
+import SearchBar from "@/components/ui/SearchBar";
+import Table from "@/components/ui/Table";
+import Pagination from "@/components/ui/Pagination";
+import Button from "@/components/ui/Button";
+import AdminActionBar from "@/components/admin/tables/AdminActionBar";
+import BulkActionsDropdown from "@/components/admin/tables/BulkActionsDropdown";
+import AdminTableContainer from "@/components/admin/tables/AdminTableContainer";
+import ConfirmDeleteModal from "@/components/admin/modals/ConfirmDeleteModal";
+import { AdminPageProps, BulkAction, TableColumn } from "@/types/admin";
+import { formatCurrency } from "@/config/currency";
+import Modal from "@/components/ui/Modal";
+import NewOrderForm from "@/components/admin/forms/NewOrderForm";
 import { createOrder } from "@/services/orderService";
 
 export default function AdminPage<T extends { id: string }>({
@@ -152,7 +152,7 @@ export default function AdminPage<T extends { id: string }>({
   };
 
   // Process table columns with custom rendering
-  const processedColumns = resource.tableColumns.map((column) => {
+  const processedColumns = resource.tableColumns.map((column: TableColumn<T>) => {
     const baseColumn = { ...column };
 
     // Add custom rendering for specific fields
@@ -212,7 +212,7 @@ export default function AdminPage<T extends { id: string }>({
   // Use processed columns without actions column for expandable rows
   const tableColumns = processedColumns;
 
-  const bulkActions: BulkAction[] = resource.bulkActions.map((action) => ({
+  const bulkActions: BulkAction[] = resource.bulkActions.map((action: BulkAction) => ({
     label: action.label,
     value: action.value,
     icon: action.icon,
@@ -306,7 +306,7 @@ export default function AdminPage<T extends { id: string }>({
                 {resource.name === "orders" ? (
                   <NewOrderForm
                     onCancel={() => setShowAddOrderModal(false)}
-                    onSubmit={async (orderData) => {
+                    onSubmit={async (orderData: { clientId: string; address: string; city: string; state: string; zip: string; products: Array<{ productId: string; quantity: number }> }) => {
                       setAddOrderError(null);
                       try {
                         // Map fields to backend format
@@ -318,7 +318,7 @@ export default function AdminPage<T extends { id: string }>({
                             state: orderData.state,
                             zipCode: orderData.zip,
                           },
-                          products: orderData.products.map((p) => ({
+                          products: orderData.products.map((p: { productId: string; quantity: number }) => ({
                             product: p.productId,
                             quantity: p.quantity,
                           })),

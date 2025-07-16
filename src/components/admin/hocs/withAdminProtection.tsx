@@ -1,5 +1,5 @@
 import React from "react";
-import AdminProtected from "./AdminProtected";
+import AdminProtected from "@/components/admin/layout/AdminProtected";
 
 // Higher-order component for admin protection
 export function withAdminProtection<P extends object>(

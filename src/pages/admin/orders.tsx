@@ -1,11 +1,11 @@
 import React from "react";
 import { useRouter } from "next/router";
-import AdminPage from "@/components/admin/AdminPage";
-import OrderStats from "@/components/admin/OrderStats";
+import AdminPage from "@/components/admin/dashboard/AdminPage";
+import OrderStats from "@/components/admin/stats/OrderStats";
 import { ordersResource, Order } from "@/config/adminResources";
 import { formatCurrency } from "@/config/currency";
 import { fetchOrders, deleteOrder as apiDeleteOrder } from "@/services/orderService";
-import ExpandedRowActions from "@/components/admin/ExpandedRowActions";
+import ExpandedRowActions from "@/components/admin/tables/ExpandedRowActions";
 
 // Define a type for the backend order object
 interface BackendOrder {
@@ -613,7 +613,7 @@ export default function AdminOrders() {
             totalRevenue={totalRevenue}
           />
         }
-        renderExpandedContent={(row) => (
+        renderExpandedContent={(row: Order) => (
           <ExpandedRowActions
             row={row}
             resource={ordersResource}

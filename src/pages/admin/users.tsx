@@ -1,7 +1,7 @@
 import React from "react";
 import { useRouter } from "next/router";
-import AdminPage from "@/components/admin/AdminPage";
-import UserStats from "@/components/admin/UserStats";
+import AdminPage from "@/components/admin/dashboard/AdminPage";
+import UserStats from "@/components/admin/stats/UserStats";
 import { usersResource, User } from "@/config/adminResources";
 import { fetchUsersWithOrderCount, deleteUser, updateUser } from "@/services/userService";
 import StatusChangeModal from "@/components/ui/StatusChangeModal";

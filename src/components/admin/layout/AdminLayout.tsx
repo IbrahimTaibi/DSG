@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useDarkMode } from "../../contexts/DarkModeContext";
-import { useAuth } from "../../hooks/useAuth";
+import { useDarkMode } from "../../../contexts/DarkModeContext";
+import { useAuth } from "../../../hooks/useAuth";
 import AdminProtected from "./AdminProtected";
 
 const navLinks = [

@@ -1,12 +1,12 @@
 import React from "react";
-import AdminLayout from "../../components/admin/AdminLayout";
-import DashboardLayout from "../../components/admin/DashboardLayout";
+import AdminLayout from "../../components/admin/layout/AdminLayout"
+import DashboardLayout from "../../components/admin/layout/DashboardLayout";
 import UserGrowthChart from "../../components/admin/charts/UserGrowthChart";
 import UserRolesPieChart from "../../components/admin/charts/UserRolesPieChart";
 import OrderStatsBarChart from "../../components/admin/charts/OrderStatsBarChart";
 import RevenueChart from "../../components/admin/charts/RevenueChart";
 import ProductPerformanceChart from "../../components/admin/charts/ProductPerformanceChart";
-import RecentActivity from "../../components/admin/RecentActivity";
+import RecentActivity from "../../components/admin/dashboard/RecentActivity";
 import { useDarkMode } from "../../contexts/DarkModeContext";
 
 // Mock data for charts
