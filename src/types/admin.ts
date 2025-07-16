@@ -22,7 +22,7 @@ export interface TableColumn<T> {
 }
 
 export interface BulkAction {
-  label: string;
+  label: ReactNode;
   value: string;
   icon?: ReactNode;
   onClick: (selectedIds: string[]) => void;
@@ -30,17 +30,17 @@ export interface BulkAction {
 }
 
 export interface SearchOption {
-  label: string;
+  label: ReactNode;
   value: string;
 }
 
 export interface SortOption {
-  label: string;
+  label: ReactNode;
   value: string;
 }
 
 export interface Statistic {
-  label: string;
+  label: ReactNode;
   value: number;
   color?: string;
   icon?: ReactNode;

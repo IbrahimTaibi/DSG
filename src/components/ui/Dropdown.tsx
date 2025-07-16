@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useDarkMode } from "../../contexts/DarkModeContext";
 
 interface DropdownOption {
-  label: string;
+  label: React.ReactNode;
   value: string;
   icon?: React.ReactNode;
   onClick: () => void;

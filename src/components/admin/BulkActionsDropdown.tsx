@@ -3,9 +3,11 @@ import Button from "../ui/Button";
 import Dropdown from "../ui/Dropdown";
 
 export interface BulkAction {
-  label: string;
+  label: React.ReactNode;
+  value: string;
   icon?: React.ReactNode;
   onClick: (selectedIds: string[]) => void;
+  color?: string;
 }
 
 export default function BulkActionsDropdown({
@@ -52,11 +54,11 @@ export default function BulkActionsDropdown({
           </svg>
         </Button>
       }
-      options={actions.map(({ label, icon, onClick }) => ({
+      options={actions.map(({ label, icon, onClick, value }) => ({
         label,
         icon,
         onClick: () => onClick(selectedIds),
-        value: label,
+        value: String(value),
       }))}
     />
   );

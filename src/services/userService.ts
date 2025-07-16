@@ -76,7 +76,14 @@ export async function fetchDeliveryAgents(): Promise<DeliveryAgent[]> {
     credentials: "include",
   });
   if (!res.ok) throw new Error("Failed to fetch delivery agents");
-  return await res.json();
+  const agents = await res.json();
+  // Always map _id to id, fallback to agent.id if _id is missing
+  return agents.map((agent: { _id?: string; id?: string; name: string; email?: string }) => ({
+    id: agent._id || agent.id || "",
+    name: agent.name,
+    email: agent.email,
+    // ...add other fields if needed
+  }));
 }
 
 export async function assignDeliveryAgent(orderId: string, deliveryGuyId: string) {

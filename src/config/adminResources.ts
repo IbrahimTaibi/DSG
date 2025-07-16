@@ -157,21 +157,21 @@ export const usersResource: AdminResource<User> = {
   ],
   bulkActions: [
     {
-      label: "Activer",
+      label: "Activer" as React.ReactNode,
       value: "activate",
       onClick: (selectedIds: string[]) => {
         console.log("Activer clients:", selectedIds);
       },
     },
     {
-      label: "Désactiver",
+      label: "Désactiver" as React.ReactNode,
       value: "deactivate",
       onClick: (selectedIds: string[]) => {
         console.log("Désactiver clients:", selectedIds);
       },
     },
     {
-      label: "Supprimer",
+      label: "Supprimer" as React.ReactNode,
       value: "delete",
       onClick: (selectedIds: string[]) => {
         console.log("Supprimer clients:", selectedIds);
@@ -179,18 +179,18 @@ export const usersResource: AdminResource<User> = {
     },
   ],
   searchOptions: [
-    { label: "Tous", value: "all" },
-    { label: "Actif", value: "actif" },
-    { label: "Inactif", value: "inactif" },
-    { label: "Admin", value: "admin" },
-    { label: "Magasin", value: "store" },
-    { label: "Livreur", value: "delivery" },
+    { label: "Tous" as React.ReactNode, value: "all" },
+    { label: "Actif" as React.ReactNode, value: "actif" },
+    { label: "Inactif" as React.ReactNode, value: "inactif" },
+    { label: "Admin" as React.ReactNode, value: "admin" },
+    { label: "Magasin" as React.ReactNode, value: "store" },
+    { label: "Livreur" as React.ReactNode, value: "delivery" },
   ],
   sortOptions: [
-    { label: "Nom (A-Z)", value: "name-asc" },
-    { label: "Nom (Z-A)", value: "name-desc" },
-    { label: "Commandes (↑)", value: "orders-asc" },
-    { label: "Commandes (↓)", value: "orders-desc" },
+    { label: "Nom (A-Z)" as React.ReactNode, value: "name-asc" },
+    { label: "Nom (Z-A)" as React.ReactNode, value: "name-desc" },
+    { label: "Commandes (↑)" as React.ReactNode, value: "orders-asc" },
+    { label: "Commandes (↓)" as React.ReactNode, value: "orders-desc" },
   ],
   addButtonText: "Ajouter un client",
   addButtonLink: "/admin/users/add",
@@ -263,28 +263,28 @@ export const ordersResource: AdminResource<Order> = {
   ],
   bulkActions: [
     {
-      label: "Confirmer",
+      label: "Confirmer" as React.ReactNode,
       value: "confirm",
       onClick: (selectedIds: string[]) => {
         console.log("Confirmer commandes:", selectedIds);
       },
     },
     {
-      label: "Expédier",
+      label: "Expédier" as React.ReactNode,
       value: "ship",
       onClick: (selectedIds: string[]) => {
         console.log("Expédier commandes:", selectedIds);
       },
     },
     {
-      label: "Annuler",
+      label: "Annuler" as React.ReactNode,
       value: "cancel",
       onClick: (selectedIds: string[]) => {
         console.log("Annuler commandes:", selectedIds);
       },
     },
     {
-      label: "Supprimer",
+      label: "Supprimer" as React.ReactNode,
       value: "delete",
       onClick: (selectedIds: string[]) => {
         console.log("Supprimer commandes:", selectedIds);
@@ -292,22 +292,22 @@ export const ordersResource: AdminResource<Order> = {
     },
   ],
   searchOptions: [
-    { label: "Toutes", value: "all" },
-    { label: "En attente", value: "en attente" },
-    { label: "Confirmée", value: "confirmée" },
-    { label: "Expédiée", value: "expédiée" },
-    { label: "Livrée", value: "livrée" },
-    { label: "Annulée", value: "annulée" },
-    { label: "Paiement en attente", value: "paiement_en_attente" },
-    { label: "Paiement effectué", value: "paiement_payé" },
+    { label: "Toutes" as React.ReactNode, value: "all" },
+    { label: "En attente" as React.ReactNode, value: "en attente" },
+    { label: "Confirmée" as React.ReactNode, value: "confirmée" },
+    { label: "Expédiée" as React.ReactNode, value: "expédiée" },
+    { label: "Livrée" as React.ReactNode, value: "livrée" },
+    { label: "Annulée" as React.ReactNode, value: "annulée" },
+    { label: "Paiement en attente" as React.ReactNode, value: "paiement_en_attente" },
+    { label: "Paiement effectué" as React.ReactNode, value: "paiement_payé" },
   ],
   sortOptions: [
-    { label: "Date (récent)", value: "date-desc" },
-    { label: "Date (ancien)", value: "date-asc" },
-    { label: "Montant (↑)", value: "amount-asc" },
-    { label: "Montant (↓)", value: "amount-desc" },
-    { label: "N° Commande (A-Z)", value: "orderNumber-asc" },
-    { label: "Client (A-Z)", value: "client-asc" },
+    { label: "Date (récent)" as React.ReactNode, value: "date-desc" },
+    { label: "Date (ancien)" as React.ReactNode, value: "date-asc" },
+    { label: "Montant (↑)" as React.ReactNode, value: "amount-asc" },
+    { label: "Montant (↓)" as React.ReactNode, value: "amount-desc" },
+    { label: "N° Commande (A-Z)" as React.ReactNode, value: "orderNumber-asc" },
+    { label: "Client (A-Z)" as React.ReactNode, value: "client-asc" },
   ],
   addButtonText: "Nouvelle commande",
   addButtonLink: "/admin/orders/add",
@@ -330,42 +330,42 @@ export const productsResource: AdminResource<Product> = {
   ],
   bulkActions: [
     {
-      label: "Activer",
+      label: "Activer" as React.ReactNode,
       value: "activate",
       onClick: (selectedIds: string[]) => {
         console.log("Activer produits:", selectedIds);
       },
     },
     {
-      label: "Désactiver",
+      label: "Désactiver" as React.ReactNode,
       value: "deactivate",
       onClick: (selectedIds: string[]) => {
         console.log("Désactiver produits:", selectedIds);
       },
     },
     {
-      label: "Rupture de stock",
+      label: "Rupture de stock" as React.ReactNode,
       value: "out_of_stock",
       onClick: (selectedIds: string[]) => {
         console.log("Rupture de stock produits:", selectedIds);
       },
     },
     {
-      label: "Discontinuer",
+      label: "Discontinuer" as React.ReactNode,
       value: "discontinue",
       onClick: (selectedIds: string[]) => {
         console.log("Discontinuer produits:", selectedIds);
       },
     },
     {
-      label: "Brouillon",
+      label: "Brouillon" as React.ReactNode,
       value: "draft",
       onClick: (selectedIds: string[]) => {
         console.log("Brouillon produits:", selectedIds);
       },
     },
     {
-      label: "Supprimer",
+      label: "Supprimer" as React.ReactNode,
       value: "delete",
       onClick: (selectedIds: string[]) => {
         console.log("Supprimer produits:", selectedIds);
@@ -373,30 +373,30 @@ export const productsResource: AdminResource<Product> = {
     },
   ],
   searchOptions: [
-    { label: "Tous", value: "all" },
-    { label: "Eau", value: "Eau" },
-    { label: "Jus", value: "Jus" },
-    { label: "Mini cakes", value: "Mini cakes" },
-    { label: "Chips", value: "Chips" },
-    { label: "Epices", value: "Epices" },
-    { label: "Chocolat", value: "Chocolat" },
-    { label: "Actif", value: "active" },
-    { label: "Inactif", value: "inactive" },
-    { label: "Rupture de stock", value: "out_of_stock" },
-    { label: "Discontinué", value: "discontinued" },
-    { label: "Brouillon", value: "draft" },
+    { label: "Tous" as React.ReactNode, value: "all" },
+    { label: "Eau" as React.ReactNode, value: "Eau" },
+    { label: "Jus" as React.ReactNode, value: "Jus" },
+    { label: "Mini cakes" as React.ReactNode, value: "Mini cakes" },
+    { label: "Chips" as React.ReactNode, value: "Chips" },
+    { label: "Epices" as React.ReactNode, value: "Epices" },
+    { label: "Chocolat" as React.ReactNode, value: "Chocolat" },
+    { label: "Actif" as React.ReactNode, value: "active" },
+    { label: "Inactif" as React.ReactNode, value: "inactive" },
+    { label: "Rupture de stock" as React.ReactNode, value: "out_of_stock" },
+    { label: "Discontinué" as React.ReactNode, value: "discontinued" },
+    { label: "Brouillon" as React.ReactNode, value: "draft" },
   ],
   sortOptions: [
-    { label: "Nom (A-Z)", value: "name-asc" },
-    { label: "Nom (Z-A)", value: "name-desc" },
-    { label: "Prix (↑)", value: "price-asc" },
-    { label: "Prix (↓)", value: "price-desc" },
-    { label: "Stock (↑)", value: "stock-asc" },
-    { label: "Stock (↓)", value: "stock-desc" },
-    { label: "Note (↑)", value: "rating-asc" },
-    { label: "Note (↓)", value: "rating-desc" },
-    { label: "Date (récent)", value: "date-desc" },
-    { label: "Date (ancien)", value: "date-asc" },
+    { label: "Nom (A-Z)" as React.ReactNode, value: "name-asc" },
+    { label: "Nom (Z-A)" as React.ReactNode, value: "name-desc" },
+    { label: "Prix (↑)" as React.ReactNode, value: "price-asc" },
+    { label: "Prix (↓)" as React.ReactNode, value: "price-desc" },
+    { label: "Stock (↑)" as React.ReactNode, value: "stock-asc" },
+    { label: "Stock (↓)" as React.ReactNode, value: "stock-desc" },
+    { label: "Note (↑)" as React.ReactNode, value: "rating-asc" },
+    { label: "Note (↓)" as React.ReactNode, value: "rating-desc" },
+    { label: "Date (récent)" as React.ReactNode, value: "date-desc" },
+    { label: "Date (ancien)" as React.ReactNode, value: "date-asc" },
   ],
   addButtonText: "Ajouter un produit",
   addButtonLink: "/admin/products/add",
@@ -417,28 +417,28 @@ export const reviewsResource: AdminResource<Review> = {
   ],
   bulkActions: [
     {
-      label: "Approuver",
+      label: "Approuver" as React.ReactNode,
       value: "approve",
       onClick: (selectedIds: string[]) => {
         console.log("Approuver avis:", selectedIds);
       },
     },
     {
-      label: "Rejeter",
+      label: "Rejeter" as React.ReactNode,
       value: "reject",
       onClick: (selectedIds: string[]) => {
         console.log("Rejeter avis:", selectedIds);
       },
     },
     {
-      label: "Marquer comme vérifié",
+      label: "Marquer comme vérifié" as React.ReactNode,
       value: "verify",
       onClick: (selectedIds: string[]) => {
         console.log("Vérifier avis:", selectedIds);
       },
     },
     {
-      label: "Supprimer",
+      label: "Supprimer" as React.ReactNode,
       value: "delete",
       onClick: (selectedIds: string[]) => {
         console.log("Supprimer avis:", selectedIds);
@@ -446,19 +446,19 @@ export const reviewsResource: AdminResource<Review> = {
     },
   ],
   searchOptions: [
-    { label: "Tous", value: "all" },
-    { label: "En attente", value: "en attente" },
-    { label: "Approuvé", value: "approuvé" },
-    { label: "Rejeté", value: "rejeté" },
-    { label: "Vérifié", value: "verified" },
-    { label: "Non vérifié", value: "unverified" },
+    { label: "Tous" as React.ReactNode, value: "all" },
+    { label: "En attente" as React.ReactNode, value: "en attente" },
+    { label: "Approuvé" as React.ReactNode, value: "approuvé" },
+    { label: "Rejeté" as React.ReactNode, value: "rejeté" },
+    { label: "Vérifié" as React.ReactNode, value: "verified" },
+    { label: "Non vérifié" as React.ReactNode, value: "unverified" },
   ],
   sortOptions: [
-    { label: "Date (récent)", value: "date-desc" },
-    { label: "Date (ancien)", value: "date-asc" },
-    { label: "Note (↑)", value: "rating-asc" },
-    { label: "Note (↓)", value: "rating-desc" },
-    { label: "Client (A-Z)", value: "client-asc" },
+    { label: "Date (récent)" as React.ReactNode, value: "date-desc" },
+    { label: "Date (ancien)" as React.ReactNode, value: "date-asc" },
+    { label: "Note (↑)" as React.ReactNode, value: "rating-asc" },
+    { label: "Note (↓)" as React.ReactNode, value: "rating-desc" },
+    { label: "Client (A-Z)" as React.ReactNode, value: "client-asc" },
   ],
   addButtonText: "Nouvel avis",
   addButtonLink: "/admin/reviews/add",
@@ -477,7 +477,7 @@ export const categoriesResource: AdminResource<Category> = {
   ],
   bulkActions: [
     {
-      label: "Supprimer",
+      label: "Supprimer" as React.ReactNode,
       value: "delete",
       onClick: (selectedIds: string[]) => {
         console.log("Supprimer catégories:", selectedIds);
@@ -485,20 +485,20 @@ export const categoriesResource: AdminResource<Category> = {
     },
   ],
   searchOptions: [
-    { label: "Toutes", value: "all" },
-    { label: "Niveau 1", value: "level-1" },
-    { label: "Niveau 2", value: "level-2" },
-    { label: "Niveau 3+", value: "level-3" },
+    { label: "Toutes" as React.ReactNode, value: "all" },
+    { label: "Niveau 1" as React.ReactNode, value: "level-1" },
+    { label: "Niveau 2" as React.ReactNode, value: "level-2" },
+    { label: "Niveau 3+" as React.ReactNode, value: "level-3" },
   ],
   sortOptions: [
-    { label: "Nom (A-Z)", value: "name-asc" },
-    { label: "Nom (Z-A)", value: "name-desc" },
-    { label: "Niveau (↑)", value: "level-asc" },
-    { label: "Niveau (↓)", value: "level-desc" },
-    { label: "Produits (↑)", value: "products-asc" },
-    { label: "Produits (↓)", value: "products-desc" },
-    { label: "Date (récent)", value: "date-desc" },
-    { label: "Date (ancien)", value: "date-asc" },
+    { label: "Nom (A-Z)" as React.ReactNode, value: "name-asc" },
+    { label: "Nom (Z-A)" as React.ReactNode, value: "name-desc" },
+    { label: "Niveau (↑)" as React.ReactNode, value: "level-asc" },
+    { label: "Niveau (↓)" as React.ReactNode, value: "level-desc" },
+    { label: "Produits (↑)" as React.ReactNode, value: "products-asc" },
+    { label: "Produits (↓)" as React.ReactNode, value: "products-desc" },
+    { label: "Date (récent)" as React.ReactNode, value: "date-desc" },
+    { label: "Date (ancien)" as React.ReactNode, value: "date-asc" },
   ],
   addButtonText: "Ajouter une catégorie",
   addButtonLink: "/admin/categories/add",

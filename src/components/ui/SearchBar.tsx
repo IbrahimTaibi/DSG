@@ -2,12 +2,12 @@ import React from "react";
 import { useDarkMode } from "../../contexts/DarkModeContext";
 
 interface FilterOption {
-  label: string;
+  label: React.ReactNode;
   value: string;
 }
 
 interface SortOption {
-  label: string;
+  label: React.ReactNode;
   value: string;
 }
 

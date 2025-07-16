@@ -1,6 +1,6 @@
 import React from "react";
 
-interface AdminActionButton {
+export interface AdminActionButton {
   label: React.ReactNode;
   onClick: () => void;
   icon: React.ReactNode;

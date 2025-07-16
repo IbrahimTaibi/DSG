@@ -4,13 +4,12 @@ import { AdminResource } from "@/types/admin";
 import ProductDetailsModal from "../ui/ProductDetailsModal";
 import { useRouter } from "next/router";
 import Modal from "@/components/ui/Modal";
-import Input from "@/components/ui/Input";
 import { fetchDeliveryAgents, assignDeliveryAgent, updateOrderStatus } from "@/services/userService";
 import { DeliveryAgent as BaseDeliveryAgent } from "@/services/userService";
 import OrderStatusChangeModal from "@/components/admin/OrderStatusChangeModal";
 import ErrorModal from "@/components/ui/ErrorModal";
 import DeliveryAgentSelector from "@/components/admin/DeliveryAgentSelector";
-import AdminActionButtons from "@/components/admin/AdminActionButtons";
+import AdminActionButtons, { AdminActionButton } from "@/components/admin/AdminActionButtons";
 
 interface DeliveryAgent extends BaseDeliveryAgent {
   _id?: string;
@@ -43,6 +42,30 @@ interface HasStatusAndId {
 // Add this type for backend agent response
 type BackendAgent = { _id: string; id?: string; name: string; email?: string; status?: string };
 
+// Add this component before the main ExpandedRowActions component
+const AddressButton: React.FC<{ addressString: string; currentTheme: { text: { secondary: string } } }> = ({ addressString, currentTheme }) => (
+  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <span>Voir l&apos;adresse</span>
+    {addressString && (
+      <span 
+        style={{ 
+          marginLeft: 8, 
+          color: currentTheme.text.secondary, 
+          fontSize: 11, 
+          opacity: 0.7, 
+          whiteSpace: 'nowrap', 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis', 
+          maxWidth: 180 
+        }} 
+        title={addressString}
+      >
+        {addressString}
+      </span>
+    )}
+  </span>
+);
+
 export default function ExpandedRowActions<T extends HasStatusAndId>({
   row,
   resource,
@@ -59,7 +82,6 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
   // Delivery agent modal state
   const [assignModalOpen, setAssignModalOpen] = React.useState(false);
   const [deliveryAgents, setDeliveryAgents] = React.useState<DeliveryAgent[]>([]);
-  const [search, setSearch] = React.useState("");
   const [loadingAgents, setLoadingAgents] = React.useState(false);
   const [selectedAgentId, setSelectedAgentId] = React.useState<string>("");
   const [assigning, setAssigning] = React.useState(false);
@@ -117,21 +139,10 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
     if (assignModalOpen && deliveryAgents.length > 0) {
       setSelectedAgentId(getAssignedAgentId());
     }
-  }, [assignModalOpen, deliveryAgents]);
-
-  // Filtered agents
-  const filteredAgents = deliveryAgents
-    .filter(agent => agent.id && /^[a-fA-F0-9]{24}$/.test(agent.id))
-    .filter(agent => {
-      const searchTerm = search.trim().toLowerCase();
-      if (!searchTerm) return true;
-      const name = agent.name?.toLowerCase() || "";
-      const email = agent.email?.toLowerCase() || "";
-      return name.includes(searchTerm) || email.includes(searchTerm);
-    });
+  }, [assignModalOpen, deliveryAgents, getAssignedAgentId]);
 
   // Define actions based on resource type
-  const getActions = () => {
+  const getActions = (): AdminActionButton[] => {
     // Only show Edit, Delete, and Show Details for categories
     if (resource.name === "categories") {
       return [
@@ -151,7 +162,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
         },
       ];
     }
-    const baseActions = [
+    const baseActions: AdminActionButton[] = [
       ...(onPrintInvoice
         ? [
             {
@@ -176,20 +187,13 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
     switch (resource.name) {
       case "orders":
         // Compose address string (use all available fields, comma-separated)
-        const addressObj = (row as any).address || {};
+        const addressObj = (row as Record<string, unknown>).address as Record<string, unknown> || {};
         const addressParts = Object.values(addressObj).filter(Boolean);
         const addressString = addressParts.join(", ");
         baseActions.push({
           label: (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span>Voir l'adresse</span>
-              {addressString && (
-                <span style={{ marginLeft: 8, color: currentTheme.text.secondary, fontSize: 11, opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }} title={addressString}>
-                  {addressString}
-                </span>
-              )}
-            </span>
-          ),
+            <AddressButton addressString={addressString} currentTheme={currentTheme} />
+          ) as React.ReactNode,
           onClick: () => {
             // Open Google Maps with the address if available, fallback to Paris,France
             const mapsQuery = addressString ? encodeURIComponent(addressString) : "Paris,France";
@@ -206,8 +210,6 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
           color: currentTheme.status.info,
           bgColor: currentTheme.status.info + "15",
         });
-        // Store addressString for rendering next to the button
-        (baseActions as any).addressString = addressString;
         // Assign to delivery agent button (only if not delivered/cancelled)
         if ((row as T).status !== "delivered" && (row as T).status !== "cancelled") {
           baseActions.push({
@@ -298,9 +300,8 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
     setStatusModalOpen(true);
   };
 
-  const actions = [
+  const actions: AdminActionButton[] = [
     ...getActions(),
-    // Only show Edit and Delete for categories
     ...(resource.name === "categories"
       ? [
           {
@@ -386,16 +387,8 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
   React.useEffect(() => {
     if (assignModalOpen) {
       console.log('deliveryAgents', deliveryAgents);
-      const filteredAgents = deliveryAgents.filter(agent => {
-        const searchTerm = search.trim().toLowerCase();
-        if (!searchTerm) return true;
-        const name = agent.name?.toLowerCase() || "";
-        const email = agent.email?.toLowerCase() || "";
-        return name.includes(searchTerm) || email.includes(searchTerm);
-      });
-      console.log('filteredAgents', filteredAgents);
     }
-  }, [assignModalOpen, deliveryAgents, search]);
+  }, [assignModalOpen, deliveryAgents]);
 
   return (
     <>
@@ -552,13 +545,6 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
         </div>
 
         <AdminActionButtons actions={actions} loading={loading} />
-
-        {/* Show address next to the Voir l'adresse button for orders */}
-        {resource.name === "orders" && (actions as any).addressString && (
-          <div style={{ marginTop: 8, marginLeft: 2, color: currentTheme.text.secondary, fontSize: 13 }}>
-            {(actions as any).addressString}
-          </div>
-        )}
 
         {loading && (
           <div className="flex items-center justify-center py-4">
