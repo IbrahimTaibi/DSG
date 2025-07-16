@@ -6,9 +6,13 @@ import { useRouter } from "next/router";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import { fetchDeliveryAgents, assignDeliveryAgent, updateOrderStatus } from "@/services/userService";
-import { DeliveryAgent } from "@/services/userService";
+import { DeliveryAgent as BaseDeliveryAgent } from "@/services/userService";
 import StatusChangeModal from "@/components/ui/StatusChangeModal";
 import ErrorModal from "@/components/ui/ErrorModal";
+
+interface DeliveryAgent extends BaseDeliveryAgent {
+  _id?: string;
+}
 
 interface ExpandedRowActionsProps<T> {
   row: T;
@@ -51,7 +55,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
   const [deliveryAgents, setDeliveryAgents] = React.useState<DeliveryAgent[]>([]);
   const [search, setSearch] = React.useState("");
   const [loadingAgents, setLoadingAgents] = React.useState(false);
-  const [selectedAgent, setSelectedAgent] = React.useState<DeliveryAgent | null>(null);
+  const [selectedAgentId, setSelectedAgentId] = React.useState<string>("");
   const [assigning, setAssigning] = React.useState(false);
   const [assignError, setAssignError] = React.useState<string | null>(null);
   // Order status modal state
@@ -72,20 +76,46 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
     cancelled: [],
   };
 
+  // Helper to get assigned agent id from row
+  function getAssignedAgentId() {
+    const assigned = (row as any).assignedTo;
+    if (!assigned) return '';
+    if (typeof assigned === 'object' && assigned._id) return assigned._id;
+    if (typeof assigned === 'string') return assigned;
+    return '';
+  }
+
+  // Open modal and fetch agents
+  const handleOpenAssignModal = () => {
+    setAssignModalOpen(true);
+  };
+
   // Fetch delivery agents when modal opens
   React.useEffect(() => {
     if (assignModalOpen) {
       setLoadingAgents(true);
       fetchDeliveryAgents()
-        .then(setDeliveryAgents)
+        .then((agents: any[]) => setDeliveryAgents(
+          agents.map(agent => ({
+            ...agent,
+            id: agent.id || agent._id // ensure id is always present
+          }))
+        ))
         .finally(() => setLoadingAgents(false));
     }
   }, [assignModalOpen]);
 
+  // Set selected agent id after agents are loaded and modal is open
+  React.useEffect(() => {
+    if (assignModalOpen && deliveryAgents.length > 0) {
+      setSelectedAgentId(getAssignedAgentId());
+    }
+  }, [assignModalOpen, deliveryAgents]);
+
   // Filtered agents
-  const filteredAgents = deliveryAgents.filter((agent) =>
-    agent.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredAgents = deliveryAgents
+    .filter(agent => agent.id && /^[a-fA-F0-9]{24}$/.test(agent.id))
+    .filter(agent => agent.name.toLowerCase().includes(search.toLowerCase()));
 
   // Define actions based on resource type
   const getActions = () => {
@@ -151,7 +181,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
         if ((row as T).status !== "delivered" && (row as T).status !== "cancelled") {
           baseActions.push({
             label: "Assigner à un livreur",
-            onClick: () => setAssignModalOpen(true),
+            onClick: handleOpenAssignModal,
             icon: (
               <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
                 <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm0 10a4 4 0 110-8 4 4 0 010 8z" fill="currentColor" />
@@ -343,32 +373,42 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
               Aucun livreur trouvé.
             </div>
           )}
-          {filteredAgents.map(agent => (
-            <div
-              key={agent.id}
-              onClick={() => setSelectedAgent(agent)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '10px 12px',
-                marginBottom: 8,
-                borderRadius: 8,
-                cursor: 'pointer',
-                background: selectedAgent?.id === agent.id ? currentTheme.status.info + '15' : currentTheme.background.secondary,
-                border: selectedAgent?.id === agent.id ? `1.5px solid ${currentTheme.status.info}` : `1px solid ${currentTheme.border.primary}`,
-                color: currentTheme.text.primary,
-                fontWeight: selectedAgent?.id === agent.id ? 600 : 400,
-                transition: 'all 0.15s',
-              }}
-            >
-              <span style={{ fontWeight: 500 }}>{agent.name}</span>
-              {selectedAgent?.id === agent.id && (
-                <span style={{ marginLeft: 'auto', color: currentTheme.status.info, fontWeight: 700 }}>
-                  ✓
-                </span>
-              )}
-            </div>
-          ))}
+          {filteredAgents.map(agent => {
+            // Only use agent.id (guaranteed valid here)
+            return (
+              <div
+                key={agent.id}
+                onClick={() => setSelectedAgentId(agent.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '10px 12px',
+                  marginBottom: 8,
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  background: selectedAgentId === agent.id ? currentTheme.status.info + '15' : currentTheme.background.secondary,
+                  border: selectedAgentId === agent.id ? `1.5px solid ${currentTheme.status.info}` : `1px solid ${currentTheme.border.primary}`,
+                  color: currentTheme.text.primary,
+                  fontWeight: selectedAgentId === agent.id ? 600 : 400,
+                  transition: 'all 0.15s',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="deliveryAgent"
+                  checked={selectedAgentId === agent.id}
+                  onChange={() => setSelectedAgentId(agent.id)}
+                  style={{ marginRight: 10 }}
+                />
+                <span style={{ fontWeight: 500 }}>{agent.name}</span>
+                {selectedAgentId === agent.id && (
+                  <span style={{ marginLeft: 'auto', color: currentTheme.status.info, fontWeight: 700 }}>
+                    ✓
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
           <button
@@ -388,11 +428,12 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
           </button>
           <button
             onClick={async () => {
-              if (selectedAgent) {
+              // Only assign if selectedAgentId is a valid ObjectId
+              if (selectedAgentId && /^[a-fA-F0-9]{24}$/.test(selectedAgentId)) {
                 setAssigning(true);
                 setAssignError(null);
                 try {
-                  await assignDeliveryAgent((row as T).id, selectedAgent.id);
+                  await assignDeliveryAgent((row as T).id, selectedAgentId);
                   setAssignModalOpen(false);
                   if (onOrderStatusChange) onOrderStatusChange('refresh');
                 } catch (err: unknown) {
@@ -406,7 +447,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
                 }
               }
             }}
-            disabled={!selectedAgent || assigning}
+            disabled={!selectedAgentId || !/^[a-fA-F0-9]{24}$/.test(selectedAgentId) || assigning}
             style={{
               padding: '8px 18px',
               borderRadius: 8,
@@ -414,8 +455,8 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
               background: currentTheme.status.info,
               color: '#fff',
               fontWeight: 600,
-              cursor: selectedAgent ? 'pointer' : 'not-allowed',
-              opacity: selectedAgent ? 1 : 0.7,
+              cursor: selectedAgentId && /^[a-fA-F0-9]{24}$/.test(selectedAgentId) ? 'pointer' : 'not-allowed',
+              opacity: selectedAgentId && /^[a-fA-F0-9]{24}$/.test(selectedAgentId) ? 1 : 0.7,
             }}
           >
             {assigning ? 'Assignation...' : 'Assigner'}
