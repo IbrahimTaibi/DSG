@@ -37,6 +37,9 @@ interface HasStatusAndId {
   id: string;
 }
 
+// Add this type for backend agent response
+type BackendAgent = { _id: string; name: string; email?: string; status?: string };
+
 export default function ExpandedRowActions<T extends HasStatusAndId>({
   row,
   resource,
@@ -77,13 +80,13 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
   };
 
   // Helper to get assigned agent id from row
-  function getAssignedAgentId() {
-    const assigned = (row as any).assignedTo;
-    if (!assigned) return '';
-    if (typeof assigned === 'object' && assigned._id) return assigned._id;
-    if (typeof assigned === 'string') return assigned;
+  const getAssignedAgentId = React.useCallback(() => {
+    const assigned = (row as { assignedTo?: { _id?: string } | string });
+    if (!assigned || !assigned.assignedTo) return '';
+    if (typeof assigned.assignedTo === 'object' && assigned.assignedTo._id) return assigned.assignedTo._id;
+    if (typeof assigned.assignedTo === 'string') return assigned.assignedTo;
     return '';
-  }
+  }, [row]);
 
   // Open modal and fetch agents
   const handleOpenAssignModal = () => {
@@ -94,16 +97,17 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
   React.useEffect(() => {
     if (assignModalOpen) {
       setLoadingAgents(true);
-      fetchDeliveryAgents()
-        .then((agents: any[]) => setDeliveryAgents(
-          agents.map(agent => ({
+      (fetchDeliveryAgents() as unknown as Promise<BackendAgent[]>)
+        .then((agents) => {
+          const mappedAgents: DeliveryAgent[] = agents.map(agent => ({
             ...agent,
-            id: agent.id || agent._id // ensure id is always present
-          }))
-        ))
+            id: agent._id // always use _id from backend
+          }));
+          setDeliveryAgents(mappedAgents);
+        })
         .finally(() => setLoadingAgents(false));
     }
-  }, [assignModalOpen]);
+  }, [assignModalOpen, getAssignedAgentId]);
 
   // Set selected agent id after agents are loaded and modal is open
   React.useEffect(() => {
