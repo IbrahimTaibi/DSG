@@ -20,6 +20,12 @@ interface BackendOrder {
   deliveryDate?: string;
   assignedTo?: { name?: string };
   deleted?: boolean;
+  address?: {
+    street?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  };
 }
 
 export default function AdminOrders() {
@@ -55,6 +61,7 @@ export default function AdminOrders() {
           paymentStatus: mapPaymentStatus(order.status) as Order["paymentStatus"],
           assignedToName: order.assignedTo?.name || '',
           deleted: order.deleted,
+          address: order.address || {}, // <-- add this line
         })) as Order[] : [];
         setOrders(mapped);
         setError(null);

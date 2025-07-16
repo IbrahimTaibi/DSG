@@ -7,11 +7,14 @@ import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import { fetchDeliveryAgents, assignDeliveryAgent, updateOrderStatus } from "@/services/userService";
 import { DeliveryAgent as BaseDeliveryAgent } from "@/services/userService";
-import StatusChangeModal from "@/components/ui/StatusChangeModal";
+import OrderStatusChangeModal from "@/components/admin/OrderStatusChangeModal";
 import ErrorModal from "@/components/ui/ErrorModal";
+import DeliveryAgentSelector from "@/components/admin/DeliveryAgentSelector";
+import AdminActionButtons from "@/components/admin/AdminActionButtons";
 
 interface DeliveryAgent extends BaseDeliveryAgent {
   _id?: string;
+  email?: string;
 }
 
 interface ExpandedRowActionsProps<T> {
@@ -38,7 +41,7 @@ interface HasStatusAndId {
 }
 
 // Add this type for backend agent response
-type BackendAgent = { _id: string; name: string; email?: string; status?: string };
+type BackendAgent = { _id: string; id?: string; name: string; email?: string; status?: string };
 
 export default function ExpandedRowActions<T extends HasStatusAndId>({
   row,
@@ -101,7 +104,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
         .then((agents) => {
           const mappedAgents: DeliveryAgent[] = agents.map(agent => ({
             ...agent,
-            id: agent._id // always use _id from backend
+            id: agent._id || agent.id || '' // always use _id from backend, fallback to id
           }));
           setDeliveryAgents(mappedAgents);
         })
@@ -119,7 +122,13 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
   // Filtered agents
   const filteredAgents = deliveryAgents
     .filter(agent => agent.id && /^[a-fA-F0-9]{24}$/.test(agent.id))
-    .filter(agent => agent.name.toLowerCase().includes(search.toLowerCase()));
+    .filter(agent => {
+      const searchTerm = search.trim().toLowerCase();
+      if (!searchTerm) return true;
+      const name = agent.name?.toLowerCase() || "";
+      const email = agent.email?.toLowerCase() || "";
+      return name.includes(searchTerm) || email.includes(searchTerm);
+    });
 
   // Define actions based on resource type
   const getActions = () => {
@@ -166,10 +175,26 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
     // Add resource-specific actions
     switch (resource.name) {
       case "orders":
+        // Compose address string (use all available fields, comma-separated)
+        const addressObj = (row as any).address || {};
+        const addressParts = Object.values(addressObj).filter(Boolean);
+        const addressString = addressParts.join(", ");
         baseActions.push({
-          label: "Voir l'adresse",
-          onClick: () =>
-            window.open("https://maps.google.com/?q=Paris,France", "_blank"),
+          label: (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>Voir l'adresse</span>
+              {addressString && (
+                <span style={{ marginLeft: 8, color: currentTheme.text.secondary, fontSize: 11, opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }} title={addressString}>
+                  {addressString}
+                </span>
+              )}
+            </span>
+          ),
+          onClick: () => {
+            // Open Google Maps with the address if available, fallback to Paris,France
+            const mapsQuery = addressString ? encodeURIComponent(addressString) : "Paris,France";
+            window.open(`https://maps.google.com/?q=${mapsQuery}`, "_blank");
+          },
           icon: (
             <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
               <path
@@ -181,6 +206,8 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
           color: currentTheme.status.info,
           bgColor: currentTheme.status.info + "15",
         });
+        // Store addressString for rendering next to the button
+        (baseActions as any).addressString = addressString;
         // Assign to delivery agent button (only if not delivered/cancelled)
         if ((row as T).status !== "delivered" && (row as T).status !== "cancelled") {
           baseActions.push({
@@ -355,6 +382,21 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
         ]),
   ];
 
+  // Debug logs for troubleshooting
+  React.useEffect(() => {
+    if (assignModalOpen) {
+      console.log('deliveryAgents', deliveryAgents);
+      const filteredAgents = deliveryAgents.filter(agent => {
+        const searchTerm = search.trim().toLowerCase();
+        if (!searchTerm) return true;
+        const name = agent.name?.toLowerCase() || "";
+        const email = agent.email?.toLowerCase() || "";
+        return name.includes(searchTerm) || email.includes(searchTerm);
+      });
+      console.log('filteredAgents', filteredAgents);
+    }
+  }, [assignModalOpen, deliveryAgents, search]);
+
   return (
     <>
       {/* Assign Delivery Agent Modal */}
@@ -365,55 +407,12 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
         size="md"
         loading={loadingAgents}
       >
-        <Input
-          placeholder="Rechercher un livreur par nom ou email..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ marginBottom: 16 }}
+        <DeliveryAgentSelector
+          agents={deliveryAgents}
+          selectedAgentId={selectedAgentId}
+          onSelect={setSelectedAgentId}
+          loading={loadingAgents}
         />
-        <div style={{ maxHeight: 300, overflowY: 'auto' }}>
-          {filteredAgents.length === 0 && !loadingAgents && (
-            <div style={{ color: currentTheme.text.muted, textAlign: 'center', padding: 24 }}>
-              Aucun livreur trouvé.
-            </div>
-          )}
-          {filteredAgents.map(agent => {
-            // Only use agent.id (guaranteed valid here)
-            return (
-              <div
-                key={agent.id}
-                onClick={() => setSelectedAgentId(agent.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '10px 12px',
-                  marginBottom: 8,
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  background: selectedAgentId === agent.id ? currentTheme.status.info + '15' : currentTheme.background.secondary,
-                  border: selectedAgentId === agent.id ? `1.5px solid ${currentTheme.status.info}` : `1px solid ${currentTheme.border.primary}`,
-                  color: currentTheme.text.primary,
-                  fontWeight: selectedAgentId === agent.id ? 600 : 400,
-                  transition: 'all 0.15s',
-                }}
-              >
-                <input
-                  type="radio"
-                  name="deliveryAgent"
-                  checked={selectedAgentId === agent.id}
-                  onChange={() => setSelectedAgentId(agent.id)}
-                  style={{ marginRight: 10 }}
-                />
-                <span style={{ fontWeight: 500 }}>{agent.name}</span>
-                {selectedAgentId === agent.id && (
-                  <span style={{ marginLeft: 'auto', color: currentTheme.status.info, fontWeight: 700 }}>
-                    ✓
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
           <button
             onClick={() => setAssignModalOpen(false)}
@@ -432,8 +431,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
           </button>
           <button
             onClick={async () => {
-              // Only assign if selectedAgentId is a valid ObjectId
-              if (selectedAgentId && /^[a-fA-F0-9]{24}$/.test(selectedAgentId)) {
+              if (selectedAgentId) {
                 setAssigning(true);
                 setAssignError(null);
                 try {
@@ -451,7 +449,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
                 }
               }
             }}
-            disabled={!selectedAgentId || !/^[a-fA-F0-9]{24}$/.test(selectedAgentId) || assigning}
+            disabled={!selectedAgentId || assigning}
             style={{
               padding: '8px 18px',
               borderRadius: 8,
@@ -459,8 +457,8 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
               background: currentTheme.status.info,
               color: '#fff',
               fontWeight: 600,
-              cursor: selectedAgentId && /^[a-fA-F0-9]{24}$/.test(selectedAgentId) ? 'pointer' : 'not-allowed',
-              opacity: selectedAgentId && /^[a-fA-F0-9]{24}$/.test(selectedAgentId) ? 1 : 0.7,
+              cursor: selectedAgentId ? 'pointer' : 'not-allowed',
+              opacity: selectedAgentId ? 1 : 0.7,
             }}
           >
             {assigning ? 'Assignation...' : 'Assigner'}
@@ -471,7 +469,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
         )}
       </Modal>
       {/* Order Status Change Modal */}
-      <StatusChangeModal
+      <OrderStatusChangeModal
         isOpen={statusModalOpen}
         onClose={() => setStatusModalOpen(false)}
         currentStatus={(row as T).status}
@@ -511,7 +509,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
               setErrorModalMsg(
                 msg +
                   (allowed.length
-                    ? `\n\nTransitions autorisées depuis "${statusLabels[current] || current}":\n- ` +
+                    ? `\n\nTransitions autorisées depuis \"${statusLabels[current] || current}\":\n- ` +
                       allowed.map(a => statusLabels[a] || a).join("\n- ")
                     : "\n\nAucune transition n'est autorisée depuis ce statut.")
               );
@@ -553,29 +551,14 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {actions.map((action, index) => (
-            <button
-              key={index}
-              className="flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 hover:scale-105 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                color: action.color,
-                background: action.bgColor,
-                borderColor: action.color + "30",
-              }}
-              onClick={action.onClick}
-              disabled={loading}>
-              <div
-                className="p-1.5 rounded-md"
-                style={{
-                  background: action.color + "20",
-                }}>
-                {action.icon}
-              </div>
-              <span className="text-sm font-medium">{action.label}</span>
-            </button>
-          ))}
-        </div>
+        <AdminActionButtons actions={actions} loading={loading} />
+
+        {/* Show address next to the Voir l'adresse button for orders */}
+        {resource.name === "orders" && (actions as any).addressString && (
+          <div style={{ marginTop: 8, marginLeft: 2, color: currentTheme.text.secondary, fontSize: 13 }}>
+            {(actions as any).addressString}
+          </div>
+        )}
 
         {loading && (
           <div className="flex items-center justify-center py-4">
