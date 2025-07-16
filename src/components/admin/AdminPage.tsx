@@ -1,5 +1,4 @@
 import React from "react";
-import { useRouter } from "next/router";
 import { useDarkMode } from "../../contexts/DarkModeContext";
 import AdminLayout from "./AdminLayout";
 import SectionHeader from "../ui/SectionHeader";
@@ -11,9 +10,11 @@ import AdminActionBar from "./AdminActionBar";
 import BulkActionsDropdown from "./BulkActionsDropdown";
 import AdminTableContainer from "./AdminTableContainer";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
-import ExpandedRowActions from "./ExpandedRowActions";
 import { AdminPageProps, BulkAction } from "../../types/admin";
 import { formatCurrency } from "../../config/currency";
+import Modal from "../ui/Modal";
+import NewOrderForm from "./NewOrderForm";
+import { createOrder } from "@/services/orderService";
 
 export default function AdminPage<T extends { id: string }>({
   resource,
@@ -23,9 +24,6 @@ export default function AdminPage<T extends { id: string }>({
   onSelectAll,
   onBulkAction,
   onDelete,
-  onEdit,
-  onToggleStatus,
-  onPrintInvoice,
   loading = false,
   currentPage,
   totalPages,
@@ -40,31 +38,23 @@ export default function AdminPage<T extends { id: string }>({
   onSortChange,
   statsComponent,
   showSubFilter = false,
+  renderExpandedContent,
+  onAddOrder,
 }: AdminPageProps<T> & {
   statsComponent?: React.ReactNode;
-  onPrintInvoice?: (item: T) => void;
   subFilter?: string;
   onSubFilterChange?: (value: string) => void;
   showSubFilter?: boolean;
+  renderExpandedContent?: (row: T) => React.ReactNode;
+  onAddOrder?: () => void;
 }) {
   const { currentTheme } = useDarkMode();
-  const router = useRouter();
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const [deletingItem, setDeletingItem] = React.useState<T | null>(null);
   const [expandedRows, setExpandedRows] = React.useState<string[]>([]);
-
-  const handleDelete = (item: T) => {
-    setDeletingItem(item);
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (deletingItem) {
-      onDelete(deletingItem);
-      setShowDeleteModal(false);
-      setDeletingItem(null);
-    }
-  };
+  const [showAddOrderModal, setShowAddOrderModal] = React.useState(false);
+  const [addOrderError, setAddOrderError] = React.useState<string | null>(null);
+  const [addOrderSuccess, setAddOrderSuccess] = React.useState(false);
 
   const handleBulkAction = (action: string) => {
     onBulkAction(action, selectedItems);
@@ -81,9 +71,9 @@ export default function AdminPage<T extends { id: string }>({
     > = {
       order: {
         pending: { label: "En attente", color: currentTheme.status.warning },
-        confirmed: { label: "Confirmée", color: currentTheme.status.info },
-        in_progress: { label: "En cours", color: currentTheme.status.info },
-        completed: { label: "Terminée", color: currentTheme.status.success },
+        waiting_for_delivery: { label: "Confirmée", color: currentTheme.status.info },
+        delivering: { label: "Expédiée", color: currentTheme.status.warning },
+        delivered: { label: "Livrée", color: currentTheme.status.success },
         cancelled: { label: "Annulée", color: currentTheme.status.error },
       },
       payment: {
@@ -232,6 +222,11 @@ export default function AdminPage<T extends { id: string }>({
   return (
     <AdminLayout>
       <div className="admin-content w-full">
+        {addOrderSuccess && (
+          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded shadow-lg text-lg font-semibold animate-fade-in-out">
+            ✅ Commande créée avec succès !
+          </div>
+        )}
         <SectionHeader
           title={`Gestion des ${resource.displayName}`}
           subtitle={`Liste et gestion des ${resource.displayName} du site.`}
@@ -276,30 +271,76 @@ export default function AdminPage<T extends { id: string }>({
             ) : undefined
           }
           right={
-            <Button
-              onClick={() => router.push(resource.addButtonLink)}
-              className="px-6 py-2 font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-lg"
-              style={{
-                color: currentTheme.text.inverse,
-                background: currentTheme.interactive.primary,
-                border: `1.5px solid ${currentTheme.interactive.primary}`,
-              }}>
-              <svg
-                width="16"
-                height="16"
-                fill="none"
-                viewBox="0 0 16 16"
-                className="mr-2">
-                <path
-                  d="M8 2v12M2 8h12"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="hidden sm:inline">{resource.addButtonText}</span>
-              <span className="sm:hidden">Ajouter</span>
-            </Button>
+            <>
+              <Button
+                // Remove any href or navigation logic
+                onClick={() => setShowAddOrderModal(true)}
+                className="px-6 py-2 font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                style={{
+                  color: currentTheme.text.inverse,
+                  background: currentTheme.interactive.primary,
+                  border: `1.5px solid ${currentTheme.interactive.primary}`,
+                }}>
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  viewBox="0 0 16 16"
+                  className="mr-2">
+                  <path
+                    d="M8 2v12M2 8h12"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="hidden sm:inline">{resource.addButtonText}</span>
+                <span className="sm:hidden">Ajouter</span>
+              </Button>
+              <Modal
+                isOpen={showAddOrderModal}
+                onClose={() => setShowAddOrderModal(false)}
+                title="Nouvelle commande"
+                size="md"
+              >
+                {resource.name === "orders" ? (
+                  <NewOrderForm
+                    onCancel={() => setShowAddOrderModal(false)}
+                    onSubmit={async (orderData) => {
+                      setAddOrderError(null);
+                      try {
+                        // Map fields to backend format
+                        const payload = {
+                          store: orderData.clientId,
+                          address: {
+                            address: orderData.address,
+                            city: orderData.city,
+                            state: orderData.state,
+                            zipCode: orderData.zip,
+                          },
+                          products: orderData.products.map((p) => ({
+                            product: p.productId,
+                            quantity: p.quantity,
+                          })),
+                        };
+                        await createOrder(payload);
+                        setShowAddOrderModal(false);
+                        setAddOrderSuccess(true);
+                        if (onAddOrder) onAddOrder();
+                        setTimeout(() => setAddOrderSuccess(false), 3500);
+                      } catch (err) {
+                        setAddOrderError((err as Error).message || "Erreur lors de la création de la commande.");
+                      }
+                    }}
+                  />
+                ) : (
+                  <NewOrderForm onCancel={() => setShowAddOrderModal(false)} />
+                )}
+                {addOrderError && (
+                  <div style={{ color: 'red', marginTop: 8 }}>{addOrderError}</div>
+                )}
+              </Modal>
+            </>
           }
         />
 
@@ -322,17 +363,7 @@ export default function AdminPage<T extends { id: string }>({
                 setExpandedRows((prev) => prev.filter((rowId) => rowId !== id));
               }
             }}
-            renderExpandedContent={(row) => (
-              <ExpandedRowActions
-                row={row}
-                resource={resource}
-                onPrintInvoice={onPrintInvoice}
-                onToggleStatus={onToggleStatus}
-                onEdit={onEdit}
-                onDelete={handleDelete}
-                loading={loading}
-              />
-            )}
+            renderExpandedContent={renderExpandedContent}
           />
         </AdminTableContainer>
 
@@ -352,7 +383,13 @@ export default function AdminPage<T extends { id: string }>({
             setShowDeleteModal(false);
             setDeletingItem(null);
           }}
-          onConfirm={handleConfirmDelete}
+          onConfirm={() => {
+            if (deletingItem) {
+              onDelete(deletingItem);
+              setShowDeleteModal(false);
+              setDeletingItem(null);
+            }
+          }}
           loading={loading}
           userName={
             deletingItem

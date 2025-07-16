@@ -71,7 +71,7 @@ export default function BottomNavBar() {
     },
     {
       name: isLoggedIn ? "Profile" : "Login",
-      href: isLoggedIn ? "/profile" : "/login",
+      href: isLoggedIn ? "/profile" : "/auth/login",
       icon: isLoggedIn ? (
         <svg
           className="w-6 h-6"
@@ -198,6 +198,41 @@ export default function BottomNavBar() {
     ),
   });
 
+  let links: NavLink[];
+  if (user?.role === "delivery") {
+    links = [
+      {
+        name: "Dashboard",
+        href: "/delivery/dashboard",
+        icon: (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 13h8V3H3v10zm10 8h8v-6h-8v6zm0-8h8V3h-8v10zm-10 8h8v-6H3v6z" />
+          </svg>
+        ),
+      },
+      {
+        name: "Chat",
+        href: "/chat",
+        icon: (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4-4.03 7-9 7-1.18 0-2.31-.13-3.36-.37-.37-.09-.77-.02-1.07.2L3 20l1.17-3.51c.13-.39.05-.82-.2-1.13C3.39 14.18 3 13.13 3 12c0-4 4.03-7 9-7s9 3 9 7z" />
+          </svg>
+        ),
+      },
+      {
+        name: "Profile",
+        href: "/profile",
+        icon: (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+          </svg>
+        ),
+      },
+    ];
+  } else {
+    links = baseLinks;
+  }
+
   return (
     <>
       <nav
@@ -211,7 +246,7 @@ export default function BottomNavBar() {
           } as React.CSSProperties
         }>
         <ul className="flex justify-around py-0 h-14">
-          {baseLinks.map((link) => {
+          {links.map((link) => {
             const isActive =
               link.href === "/"
                 ? router.pathname === "/"

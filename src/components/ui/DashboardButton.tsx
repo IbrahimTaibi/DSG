@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { useDarkMode } from "../../contexts/DarkModeContext";
+import { useAuth } from "../../hooks/useAuth";
 
 interface DashboardButtonProps {
   className?: string;
@@ -10,11 +11,19 @@ export default function DashboardButton({
   className = "",
 }: DashboardButtonProps) {
   const { currentTheme } = useDarkMode();
+  const { user } = useAuth();
+
+  let dashboardHref = "/admin/dashboard";
+  if (user?.role === "delivery") {
+    dashboardHref = "/delivery/dashboard";
+  } else if (user?.role === "admin") {
+    dashboardHref = "/admin/dashboard";
+  }
 
   return (
     <>
       <Link
-        href="/admin/dashboard"
+        href={dashboardHref}
         className={`dashboard-button ${className}`}
         style={{
           color: currentTheme.text.inverse,

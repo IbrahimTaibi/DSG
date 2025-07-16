@@ -17,6 +17,8 @@ export default function Custom404() {
           style={{ color: currentTheme.status.warning }}
         />
       }
+      backgroundColor={currentTheme.background.primary}
+      textColor={currentTheme.text.primary}
     />
   );
 }

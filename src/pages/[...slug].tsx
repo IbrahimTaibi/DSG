@@ -4,8 +4,8 @@ import { useRouter } from 'next/router';
 import { fetchCategoryBySlug } from '@/services/categoryService';
 import { fetchProductsByCategorySlug, ProductListResult } from '@/services/productService';
 import { parseSlug } from '@/utils/slugUtils';
-import { CategoryHeader } from '@/components/categories/CategoryHeader';
-import { Breadcrumb, BreadcrumbItem } from '@/components/categories/Breadcrumb';
+import { CategoryHeader } from '@/components/category/CategoryHeader';
+import { Breadcrumb, BreadcrumbItem } from '@/components/category/Breadcrumb';
 import ProductGrid from '@/components/product/ProductGrid';
 import { Category } from '@/types/admin';
 import { Product } from '@/types/product';
@@ -99,7 +99,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
     const category = await fetchCategoryBySlug(slugArr[slugArr.length - 1]);
     if (!category) {
-      return { props: { category: null, products: [], total: 0, page: 1, pageSize: 20, slug: slugArr, error: null } };
+      return { notFound: true };
     }
     
     // Fetch real products for the category

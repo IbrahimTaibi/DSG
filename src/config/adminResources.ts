@@ -20,11 +20,14 @@ export interface Order {
   orderNumber: string;
   clientName: string;
   clientEmail: string;
-  status: "en attente" | "confirmée" | "expédiée" | "livrée" | "annulée";
+  status: "en attente" | "confirmée" | "expédiée" | "livrée" | "annulée" | "pending" | "waiting_for_delivery" | "delivering" | "delivered" | "cancelled";
   totalAmount: number;
   createdAt: string;
   deliveryDate: string;
   paymentStatus: "en attente" | "payé" | "échoué";
+  assignedToName?: string; // Added for the new column
+  deleted?: boolean; // Optional, for soft delete support
+  statusLabel?: string; // For display
 }
 
 // Product type definition
@@ -201,7 +204,58 @@ export const ordersResource: AdminResource<Order> = {
   tableColumns: [
     { header: "N° Commande", accessor: "orderNumber" },
     { header: "Client", accessor: "clientName" },
-    { header: "Statut", accessor: "status" },
+    {
+      header: "Assigné à",
+      accessor: "assignedToName",
+      render: (value) => value || "-",
+    },
+    {
+      header: "Statut",
+      accessor: "status",
+      render: (value, row: Order) => {
+        const mode = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        const theme = mode === 'dark' ? darkTheme : lightTheme;
+        let color;
+        switch (value) {
+          case "pending":
+            color = theme.status.warning;
+            break;
+          case "waiting_for_delivery":
+            color = theme.status.info;
+            break;
+          case "delivering":
+            color = theme.status.warning;
+            break;
+          case "delivered":
+            color = theme.status.success;
+            break;
+          case "cancelled":
+            color = theme.status.error;
+            break;
+          default:
+            color = "#ff00ff"; // fallback magenta for debug
+            console.warn("Unknown status value for color:", value);
+        }
+        console.log('Order status value:', value, 'Color:', color);
+        const label = row.statusLabel || value;
+        return React.createElement(
+          'span',
+          {
+            style: {
+              color,
+              background: color + "15",
+              border: `1px solid ${color}30`,
+              padding: "2px 10px",
+              borderRadius: "999px",
+              fontSize: 12,
+              fontWeight: 500,
+              display: "inline-block",
+            }
+          },
+          label
+        );
+      },
+    },
     { header: "Montant total", accessor: "totalAmount" },
     { header: "Paiement", accessor: "paymentStatus" },
     { header: "Date", accessor: "createdAt" },

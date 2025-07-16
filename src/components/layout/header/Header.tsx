@@ -8,6 +8,7 @@ import DashboardButton from "../../ui/DashboardButton";
 import { CartIcon } from "../../ui/CartIcon";
 import { useRef } from "react";
 import React from "react";
+import { useRouter } from "next/router";
 
 
 export default function Header() {
@@ -19,6 +20,7 @@ export default function Header() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
 
   // Notifications are now handled by the NotificationContext
@@ -83,6 +85,7 @@ export default function Header() {
   const handleLogout = () => {
     logout();
     setShowUserMenu(false);
+    router.replace("/");
   };
 
   return (
@@ -191,8 +194,7 @@ export default function Header() {
 
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex items-center space-x-6">
-              {/* Admin Dashboard Link */}
-              {isAuthenticated && user?.role === "admin" && <DashboardButton />}
+              {isAuthenticated && user?.role !== "store" && <DashboardButton />}
             </div>
 
             {/* Right Side Actions */}

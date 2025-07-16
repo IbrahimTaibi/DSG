@@ -60,7 +60,7 @@ const CheckoutPage: NextPage = () => {
       return;
     }
     if (state.items.length === 0) {
-      router.push('/cart');
+      router.push('/'); // Redirect to home if cart is empty
       return;
     }
   }, [user, state.items.length, router]);

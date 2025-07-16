@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useDarkMode } from "../../../contexts/DarkModeContext";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const mainLinks = [
   {
@@ -83,15 +84,30 @@ const mainLinks = [
   },
 ];
 
-export default function MainNavBar() {
+// Add prop type for links
+interface MainNavBarProps {
+  links?: typeof mainLinks;
+}
+
+export default function MainNavBar({ links }: MainNavBarProps) {
   const { currentTheme } = useDarkMode();
   const router = useRouter();
+  const { user } = useAuth();
   const isDark =
     currentTheme.background.primary === "#0f172a" ||
     currentTheme.background.primary === "#0a0a0a";
 
-  // Build links, inserting 'Messages' only if logged in
-  const links = mainLinks.filter((link) => link.name !== "Messages");
+  // Use provided links or default to mainLinks
+  let navLinks = links || mainLinks.filter((link) => link.name !== "Messages");
+
+  // Only move 'Profile' link to the first position if user is delivery agent
+  if (user?.role === "delivery") {
+    const profileIndex = navLinks.findIndex((link) => link.name === "Profile");
+    if (profileIndex > 0) {
+      const [profileLink] = navLinks.splice(profileIndex, 1);
+      navLinks = [profileLink, ...navLinks];
+    }
+  }
 
   return (
     <nav
@@ -107,7 +123,7 @@ export default function MainNavBar() {
         } as React.CSSProperties
       }>
       <ul className="flex justify-center space-x-0 py-0 h-12">
-        {links.map((link) => {
+        {navLinks.map((link) => {
           const isActive =
             link.href === "/"
               ? router.pathname === "/"

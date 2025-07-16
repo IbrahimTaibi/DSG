@@ -4,103 +4,30 @@ import AdminPage from "@/components/admin/AdminPage";
 import OrderStats from "@/components/admin/OrderStats";
 import { ordersResource, Order } from "@/config/adminResources";
 import { formatCurrency } from "@/config/currency";
+import { fetchOrders, deleteOrder as apiDeleteOrder } from "@/services/orderService";
+import ExpandedRowActions from "@/components/admin/ExpandedRowActions";
 
-// Mock data (replace with real API calls)
-const mockOrders: Order[] = [
-  {
-    id: "1",
-    orderNumber: "ORD-2024-001",
-    clientName: "Alice Martin",
-    clientEmail: "alice@email.com",
-    status: "confirmée",
-    totalAmount: 150.0,
-    createdAt: "2024-01-15",
-    deliveryDate: "2024-01-20",
-    paymentStatus: "payé",
-  },
-  {
-    id: "2",
-    orderNumber: "ORD-2024-002",
-    clientName: "Bob Dupont",
-    clientEmail: "bob@email.com",
-    status: "expédiée",
-    totalAmount: 80.0,
-    createdAt: "2024-01-16",
-    deliveryDate: "2024-01-18",
-    paymentStatus: "payé",
-  },
-  {
-    id: "3",
-    orderNumber: "ORD-2024-003",
-    clientName: "Charlie Durand",
-    clientEmail: "charlie@email.com",
-    status: "en attente",
-    totalAmount: 120.0,
-    createdAt: "2024-01-17",
-    deliveryDate: "2024-01-22",
-    paymentStatus: "en attente",
-  },
-  {
-    id: "4",
-    orderNumber: "ORD-2024-004",
-    clientName: "Diane Leroy",
-    clientEmail: "diane@email.com",
-    status: "livrée",
-    totalAmount: 200.0,
-    createdAt: "2024-01-14",
-    deliveryDate: "2024-01-16",
-    paymentStatus: "payé",
-  },
-  {
-    id: "5",
-    orderNumber: "ORD-2024-005",
-    clientName: "Eve Moreau",
-    clientEmail: "eve@email.com",
-    status: "annulée",
-    totalAmount: 60.0,
-    createdAt: "2024-01-13",
-    deliveryDate: "2024-01-15",
-    paymentStatus: "échoué",
-  },
-  {
-    id: "6",
-    orderNumber: "ORD-2024-006",
-    clientName: "Frank Dubois",
-    clientEmail: "frank@email.com",
-    status: "confirmée",
-    totalAmount: 90.0,
-    createdAt: "2024-01-18",
-    deliveryDate: "2024-01-25",
-    paymentStatus: "payé",
-  },
-  {
-    id: "7",
-    orderNumber: "ORD-2024-007",
-    clientName: "Grace Petit",
-    clientEmail: "grace@email.com",
-    status: "expédiée",
-    totalAmount: 350.0,
-    createdAt: "2024-01-12",
-    deliveryDate: "2024-01-19",
-    paymentStatus: "payé",
-  },
-  {
-    id: "8",
-    orderNumber: "ORD-2024-008",
-    clientName: "Henri Rousseau",
-    clientEmail: "henri@email.com",
-    status: "en attente",
-    totalAmount: 45.0,
-    createdAt: "2024-01-19",
-    deliveryDate: "2024-01-21",
-    paymentStatus: "en attente",
-  },
-];
+// Define a type for the backend order object
+interface BackendOrder {
+  _id?: string;
+  id?: string;
+  orderId?: string;
+  orderNumber?: string;
+  store?: { name?: string; email?: string };
+  status: string;
+  total?: number;
+  createdAt?: string;
+  deliveryDate?: string;
+  assignedTo?: { name?: string };
+  deleted?: boolean;
+}
 
 export default function AdminOrders() {
   const router = useRouter();
 
   // State management
+  const [orders, setOrders] = React.useState<Order[]>([]);
+  const [error, setError] = React.useState<string | null>(null);
   const [search, setSearch] = React.useState("");
   const [filter, setFilter] = React.useState("all");
   const [sort, setSort] = React.useState("date-desc");
@@ -110,14 +37,92 @@ export default function AdminOrders() {
 
   const itemsPerPage = 10;
 
+  // Helper to fetch and set orders
+  const fetchAndSetOrders = React.useCallback(() => {
+    setIsLoading(true);
+    fetchOrders()
+      .then((data) => {
+        const mapped = Array.isArray(data) ? data.map((order: BackendOrder) => ({
+          id: order._id || order.id || '',
+          orderNumber: order.orderId || order.orderNumber || '',
+          clientName: order.store?.name || '',
+          clientEmail: order.store?.email || '',
+          status: order.status, // keep backend value
+          statusLabel: mapOrderStatus(order.status), // for display
+          totalAmount: order.total || 0,
+          createdAt: order.createdAt || '',
+          deliveryDate: order.deliveryDate || '',
+          paymentStatus: mapPaymentStatus(order.status) as Order["paymentStatus"],
+          assignedToName: order.assignedTo?.name || '',
+          deleted: order.deleted,
+        })) as Order[] : [];
+        setOrders(mapped);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "Failed to fetch orders");
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  // Update order in state after status change or assignment
+  const updateOrderInState = (orderId: string, newStatus: string) => {
+    if (newStatus === 'refresh') {
+      fetchAndSetOrders();
+      return;
+    }
+    // (Legacy: local update, not used anymore)
+    // setOrders((prevOrders) =>
+    //   prevOrders.map((order) =>
+    //     order.id === orderId
+    //       ? { ...order, status: newStatus, statusLabel: mapOrderStatus(newStatus) } as Order & { statusLabel: string }
+    //       : order
+    //   )
+    // );
+  };
+
+  // Helper to map backend status to frontend status
+  function mapOrderStatus(status: string) {
+    switch (status) {
+      case 'pending': return 'En attente';
+      case 'waiting_for_delivery': return 'Confirmée';
+      case 'delivering': return 'Expédiée';
+      case 'delivered': return 'Livrée';
+      case 'cancelled': return 'Annulée';
+      default: return status;
+    }
+  }
+
+  // Helper to map backend status to payment status (simple logic, adjust as needed)
+  function mapPaymentStatus(status: string) {
+    switch (status) {
+      case 'delivered': return 'payé';
+      case 'pending':
+      case 'waiting_for_delivery':
+      case 'delivering': return 'en attente';
+      case 'cancelled': return 'échoué';
+      default: return 'en attente';
+    }
+  }
+
+  // Map French status labels to backend status keys
+  const statusLabelToKey: Record<string, string> = {
+    "en attente": "pending",
+    "confirmée": "waiting_for_delivery",
+    "expédiée": "delivering",
+    "livrée": "delivered",
+    "annulée": "cancelled",
+  };
+
+  // Fetch orders from backend
+  React.useEffect(() => {
+    fetchAndSetOrders();
+  }, [fetchAndSetOrders]);
+
   // Filter and sort orders
-  let filteredOrders = mockOrders.filter((order) => {
+  let filteredOrders = orders.filter((order) => {
     if (filter === "all") return true;
-    if (filter === "en attente") return order.status === "en attente";
-    if (filter === "confirmée") return order.status === "confirmée";
-    if (filter === "expédiée") return order.status === "expédiée";
-    if (filter === "livrée") return order.status === "livrée";
-    if (filter === "annulée") return order.status === "annulée";
+    if (statusLabelToKey[filter]) return order.status === statusLabelToKey[filter];
     if (filter === "paiement_en_attente")
       return order.paymentStatus === "en attente";
     if (filter === "paiement_payé") return order.paymentStatus === "payé";
@@ -126,9 +131,9 @@ export default function AdminOrders() {
 
   filteredOrders = filteredOrders.filter(
     (order) =>
-      order.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
-      order.clientName.toLowerCase().includes(search.toLowerCase()) ||
-      order.clientEmail.toLowerCase().includes(search.toLowerCase()),
+      (order.orderNumber?.toLowerCase() || "").includes(search.toLowerCase()) ||
+      (order.clientName?.toLowerCase() || "").includes(search.toLowerCase()) ||
+      (order.clientEmail?.toLowerCase() || "").includes(search.toLowerCase()),
   );
 
   filteredOrders = filteredOrders.sort((a, b) => {
@@ -186,12 +191,12 @@ export default function AdminOrders() {
 
   const handleDelete = async (order: Order) => {
     setIsLoading(true);
+    setError(null);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      console.log(`Delete order ${order.id}`);
-    } catch (error) {
-      console.error("Error deleting order:", error);
+      await apiDeleteOrder(order.id);
+      fetchAndSetOrders();
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "Erreur lors de la suppression de la commande.");
     } finally {
       setIsLoading(false);
     }
@@ -556,47 +561,65 @@ export default function AdminOrders() {
   };
 
   // Calculate stats for OrderStats component
-  const totalOrders = mockOrders.length;
-  const pendingOrders = mockOrders.filter(
-    (order) => order.status === "en attente",
+  const nonDeletedOrders = orders.filter(order => !order.deleted);
+  const totalOrders = nonDeletedOrders.length;
+  const pendingOrders = nonDeletedOrders.filter(
+    (order) => order.status === "pending",
   ).length;
-  const completedOrders = mockOrders.filter(
-    (order) => order.status === "livrée",
+  const completedOrders = nonDeletedOrders.filter(
+    (order) => order.status === "delivered",
   ).length;
-  const totalRevenue = mockOrders
+  const totalRevenue = nonDeletedOrders
     .filter((order) => order.paymentStatus === "payé")
     .reduce((sum, order) => sum + order.totalAmount, 0);
 
   return (
-    <AdminPage
-      resource={ordersResource}
-      data={paginatedOrders}
-      selectedItems={selectedOrders}
-      onSelectItem={handleRowSelect}
-      onSelectAll={handleSelectAll}
-      onBulkAction={handleBulkAction}
-      onDelete={handleDelete}
-      onEdit={handleEdit}
-      onToggleStatus={handleToggleStatus}
-      onPrintInvoice={handlePrintInvoice}
-      loading={isLoading}
-      currentPage={currentPage}
-      totalPages={totalPages}
-      onPageChange={setCurrentPage}
-      search={search}
-      onSearchChange={setSearch}
-      filter={filter}
-      onFilterChange={setFilter}
-      sort={sort}
-      onSortChange={setSort}
-      statsComponent={
-        <OrderStats
-          totalOrders={totalOrders}
-          pendingOrders={pendingOrders}
-          completedOrders={completedOrders}
-          totalRevenue={totalRevenue}
-        />
-      }
-    />
+    <>
+      {error && (
+        <div style={{ color: 'red', marginBottom: 16 }}>{error}</div>
+      )}
+      <AdminPage
+        resource={ordersResource}
+        data={paginatedOrders}
+        selectedItems={selectedOrders}
+        onSelectItem={handleRowSelect}
+        onSelectAll={handleSelectAll}
+        onBulkAction={handleBulkAction}
+        onDelete={handleDelete}
+        onEdit={handleEdit}
+        onToggleStatus={handleToggleStatus}
+        loading={isLoading}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        search={search}
+        onSearchChange={setSearch}
+        filter={filter}
+        onFilterChange={setFilter}
+        sort={sort}
+        onSortChange={setSort}
+        statsComponent={
+          <OrderStats
+            totalOrders={totalOrders}
+            pendingOrders={pendingOrders}
+            completedOrders={completedOrders}
+            totalRevenue={totalRevenue}
+          />
+        }
+        renderExpandedContent={(row) => (
+          <ExpandedRowActions
+            row={row}
+            resource={ordersResource}
+            onPrintInvoice={handlePrintInvoice}
+            onToggleStatus={handleToggleStatus}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            loading={isLoading}
+            onOrderStatusChange={(newStatus) => updateOrderInState(row.id, newStatus)}
+          />
+        )}
+        onAddOrder={fetchAndSetOrders}
+      />
+    </>
   );
 }

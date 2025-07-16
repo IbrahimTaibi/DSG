@@ -9,7 +9,20 @@ function getAuthHeaders(contentType = true) {
   return headers;
 }
 
-export async function fetchUsers() {
+export interface User {
+  id: string;
+  _id?: string;
+  name: string;
+  email?: string;
+  role: string;
+}
+
+export interface DeliveryAgent {
+  id: string;
+  name: string;
+}
+
+export async function fetchUsers(): Promise<User[]> {
   const res = await fetch(`${API_BASE}/api/users`, {
     headers: getAuthHeaders(false),
     credentials: "include",
@@ -54,5 +67,36 @@ export async function fetchUsersWithOrderCount() {
     credentials: "include",
   });
   if (!res.ok) throw new Error("Failed to fetch users with order count");
+  return await res.json();
+}
+
+export async function fetchDeliveryAgents(): Promise<DeliveryAgent[]> {
+  const res = await fetch(`${API_BASE}/api/users/delivery`, {
+    headers: getAuthHeaders(false),
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to fetch delivery agents");
+  return await res.json();
+}
+
+export async function assignDeliveryAgent(orderId: string, deliveryGuyId: string) {
+  const res = await fetch(`${API_BASE}/api/orders/${orderId}/assign`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify({ deliveryGuyId }),
+  });
+  if (!res.ok) throw new Error("Failed to assign delivery agent");
+  return await res.json();
+}
+
+export async function updateOrderStatus(orderId: string, status: string) {
+  const res = await fetch(`${API_BASE}/api/orders/${orderId}/status`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error("Failed to update order status");
   return await res.json();
 } 

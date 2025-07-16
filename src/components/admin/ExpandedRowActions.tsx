@@ -3,6 +3,12 @@ import { useDarkMode } from "@/contexts/DarkModeContext";
 import { AdminResource } from "@/types/admin";
 import ProductDetailsModal from "../ui/ProductDetailsModal";
 import { useRouter } from "next/router";
+import Modal from "@/components/ui/Modal";
+import Input from "@/components/ui/Input";
+import { fetchDeliveryAgents, assignDeliveryAgent, updateOrderStatus } from "@/services/userService";
+import { DeliveryAgent } from "@/services/userService";
+import StatusChangeModal from "@/components/ui/StatusChangeModal";
+import ErrorModal from "@/components/ui/ErrorModal";
 
 interface ExpandedRowActionsProps<T> {
   row: T;
@@ -12,6 +18,7 @@ interface ExpandedRowActionsProps<T> {
   onEdit: (item: T) => void;
   onDelete: (item: T) => void;
   loading: boolean;
+  onOrderStatusChange?: (newStatus: string) => void;
 }
 
 // Helper type for objects that might have _id or id
@@ -20,7 +27,13 @@ interface WithId {
   id?: string;
 }
 
-export default function ExpandedRowActions<T extends { id: string }>({
+// Update the generic definition to require status and id
+interface HasStatusAndId {
+  status: string;
+  id: string;
+}
+
+export default function ExpandedRowActions<T extends HasStatusAndId>({
   row,
   resource,
   onPrintInvoice,
@@ -28,10 +41,51 @@ export default function ExpandedRowActions<T extends { id: string }>({
   onEdit,
   onDelete,
   loading,
+  onOrderStatusChange,
 }: ExpandedRowActionsProps<T>) {
   const { currentTheme } = useDarkMode();
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const router = useRouter();
+  // Delivery agent modal state
+  const [assignModalOpen, setAssignModalOpen] = React.useState(false);
+  const [deliveryAgents, setDeliveryAgents] = React.useState<DeliveryAgent[]>([]);
+  const [search, setSearch] = React.useState("");
+  const [loadingAgents, setLoadingAgents] = React.useState(false);
+  const [selectedAgent, setSelectedAgent] = React.useState<DeliveryAgent | null>(null);
+  const [assigning, setAssigning] = React.useState(false);
+  const [assignError, setAssignError] = React.useState<string | null>(null);
+  // Order status modal state
+  const [statusModalOpen, setStatusModalOpen] = React.useState(false);
+  const [selectedStatus, setSelectedStatus] = React.useState<string>("");
+  const [statusLoading, setStatusLoading] = React.useState(false);
+  // Error modal state
+  const [errorModalOpen, setErrorModalOpen] = React.useState(false);
+  const [errorModalMsg, setErrorModalMsg] = React.useState<string>("");
+  const [errorModalTitle, setErrorModalTitle] = React.useState<string>("Erreur de transition de statut");
+
+  // Allowed transitions map (should match backend)
+  const allowedTransitions: Record<string, string[]> = {
+    pending: ["waiting_for_delivery", "cancelled"],
+    waiting_for_delivery: ["delivering", "cancelled"],
+    delivering: ["delivered", "cancelled"],
+    delivered: [],
+    cancelled: [],
+  };
+
+  // Fetch delivery agents when modal opens
+  React.useEffect(() => {
+    if (assignModalOpen) {
+      setLoadingAgents(true);
+      fetchDeliveryAgents()
+        .then(setDeliveryAgents)
+        .finally(() => setLoadingAgents(false));
+    }
+  }, [assignModalOpen]);
+
+  // Filtered agents
+  const filteredAgents = deliveryAgents.filter((agent) =>
+    agent.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   // Define actions based on resource type
   const getActions = () => {
@@ -93,6 +147,21 @@ export default function ExpandedRowActions<T extends { id: string }>({
           color: currentTheme.status.info,
           bgColor: currentTheme.status.info + "15",
         });
+        // Assign to delivery agent button (only if not delivered/cancelled)
+        if ((row as T).status !== "delivered" && (row as T).status !== "cancelled") {
+          baseActions.push({
+            label: "Assigner à un livreur",
+            onClick: () => setAssignModalOpen(true),
+            icon: (
+              <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+                <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm0 10a4 4 0 110-8 4 4 0 010 8z" fill="currentColor" />
+                <path d="M12 14v-1a4 4 0 00-8 0v1" stroke="currentColor" strokeWidth="1" fill="none" />
+              </svg>
+            ),
+            color: "#3B82F6",
+            bgColor: "#3B82F6" + "15",
+          });
+        }
         break;
       case "products":
         baseActions.push({
@@ -162,6 +231,12 @@ export default function ExpandedRowActions<T extends { id: string }>({
     return baseActions;
   };
 
+  // Handler for Changer le statut
+  const handleOrderStatusChange = () => {
+    setSelectedStatus((row as T).status);
+    setStatusModalOpen(true);
+  };
+
   const actions = [
     ...getActions(),
     // Only show Edit and Delete for categories
@@ -201,7 +276,7 @@ export default function ExpandedRowActions<T extends { id: string }>({
             ? [
                 {
                   label: "Changer le statut",
-                  onClick: () => onToggleStatus(row),
+                  onClick: handleOrderStatusChange,
                   icon: (
                     <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
                       <path
@@ -248,6 +323,173 @@ export default function ExpandedRowActions<T extends { id: string }>({
 
   return (
     <>
+      {/* Assign Delivery Agent Modal */}
+      <Modal
+        isOpen={assignModalOpen}
+        onClose={() => setAssignModalOpen(false)}
+        title="Assigner à un livreur"
+        size="md"
+        loading={loadingAgents}
+      >
+        <Input
+          placeholder="Rechercher un livreur par nom ou email..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ marginBottom: 16 }}
+        />
+        <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+          {filteredAgents.length === 0 && !loadingAgents && (
+            <div style={{ color: currentTheme.text.muted, textAlign: 'center', padding: 24 }}>
+              Aucun livreur trouvé.
+            </div>
+          )}
+          {filteredAgents.map(agent => (
+            <div
+              key={agent.id}
+              onClick={() => setSelectedAgent(agent)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '10px 12px',
+                marginBottom: 8,
+                borderRadius: 8,
+                cursor: 'pointer',
+                background: selectedAgent?.id === agent.id ? currentTheme.status.info + '15' : currentTheme.background.secondary,
+                border: selectedAgent?.id === agent.id ? `1.5px solid ${currentTheme.status.info}` : `1px solid ${currentTheme.border.primary}`,
+                color: currentTheme.text.primary,
+                fontWeight: selectedAgent?.id === agent.id ? 600 : 400,
+                transition: 'all 0.15s',
+              }}
+            >
+              <span style={{ fontWeight: 500 }}>{agent.name}</span>
+              {selectedAgent?.id === agent.id && (
+                <span style={{ marginLeft: 'auto', color: currentTheme.status.info, fontWeight: 700 }}>
+                  ✓
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
+          <button
+            onClick={() => setAssignModalOpen(false)}
+            style={{
+              padding: '8px 18px',
+              borderRadius: 8,
+              border: 'none',
+              background: currentTheme.background.secondary,
+              color: currentTheme.text.primary,
+              fontWeight: 500,
+              marginRight: 8,
+              cursor: 'pointer',
+            }}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={async () => {
+              if (selectedAgent) {
+                setAssigning(true);
+                setAssignError(null);
+                try {
+                  await assignDeliveryAgent((row as T).id, selectedAgent.id);
+                  setAssignModalOpen(false);
+                  if (onOrderStatusChange) onOrderStatusChange('refresh');
+                } catch (err: unknown) {
+                  if (err instanceof Error) {
+                    setAssignError("Erreur lors de l'assignation. Veuillez réessayer.");
+                  } else {
+                    setAssignError("Erreur inconnue lors de l'assignation.");
+                  }
+                } finally {
+                  setAssigning(false);
+                }
+              }
+            }}
+            disabled={!selectedAgent || assigning}
+            style={{
+              padding: '8px 18px',
+              borderRadius: 8,
+              border: 'none',
+              background: currentTheme.status.info,
+              color: '#fff',
+              fontWeight: 600,
+              cursor: selectedAgent ? 'pointer' : 'not-allowed',
+              opacity: selectedAgent ? 1 : 0.7,
+            }}
+          >
+            {assigning ? 'Assignation...' : 'Assigner'}
+          </button>
+        </div>
+        {assignError && (
+          <div style={{ color: currentTheme.status.error, marginTop: 12, textAlign: 'right' }}>{assignError}</div>
+        )}
+      </Modal>
+      {/* Order Status Change Modal */}
+      <StatusChangeModal
+        isOpen={statusModalOpen}
+        onClose={() => setStatusModalOpen(false)}
+        currentStatus={(row as T).status}
+        selectedStatus={selectedStatus}
+        options={[
+          { label: "En attente", value: "pending" },
+          { label: "Confirmée", value: "waiting_for_delivery" },
+          { label: "Expédiée", value: "delivering" },
+          { label: "Livrée", value: "delivered" },
+          { label: "Annulée", value: "cancelled" },
+        ].filter(opt =>
+          opt.value === (row as T).status || allowedTransitions[(row as T).status]?.includes(opt.value)
+        )}
+        onChange={setSelectedStatus}
+        onConfirm={async () => {
+          setStatusLoading(true);
+          try {
+            await updateOrderStatus((row as T).id, selectedStatus);
+            setStatusModalOpen(false);
+            if (onOrderStatusChange) onOrderStatusChange('refresh');
+          } catch (err: unknown) {
+            if (err instanceof Error) {
+              let msg = "Changement de statut non autorisé.";
+              if (err.message) {
+                msg = err.message;
+              }
+              const current = (row as T).status;
+              const allowed = allowedTransitions[current] || [];
+              const statusLabels: Record<string, string> = {
+                pending: "En attente",
+                waiting_for_delivery: "Confirmée",
+                delivering: "Expédiée",
+                delivered: "Livrée",
+                cancelled: "Annulée",
+              };
+              setErrorModalTitle("Erreur de transition de statut");
+              setErrorModalMsg(
+                msg +
+                  (allowed.length
+                    ? `\n\nTransitions autorisées depuis "${statusLabels[current] || current}":\n- ` +
+                      allowed.map(a => statusLabels[a] || a).join("\n- ")
+                    : "\n\nAucune transition n'est autorisée depuis ce statut.")
+              );
+              setErrorModalOpen(true);
+            } else {
+              setErrorModalTitle("Erreur inconnue");
+              setErrorModalMsg("Une erreur inconnue s'est produite lors du changement de statut.");
+              setErrorModalOpen(true);
+            }
+          } finally {
+            setStatusLoading(false);
+          }
+        }}
+        loading={statusLoading}
+        title="Changer le statut de la commande"
+      />
+      <ErrorModal
+        isOpen={errorModalOpen}
+        onClose={() => setErrorModalOpen(false)}
+        title={errorModalTitle}
+        message={errorModalMsg}
+        size="sm"
+      />
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h4

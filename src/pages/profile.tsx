@@ -6,18 +6,20 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileForm from "@/components/profile/ProfileForm";
 import ProfileStats from "@/components/profile/ProfileStats";
 import ProfileActions from "@/components/profile/ProfileActions";
-import { useUserStats, useStoreStats, useDeliveryStats } from "@/hooks/useStats";
+import ErrorPage from "@/components/ui/ErrorPage";
+import { useUserStats, useStoreStats } from "@/hooks/useStats";
+import Link from "next/link";
 
 export default function Profile() {
   const router = useRouter();
   const { user, isAuthenticated, logout, isLoading } = useAuth();
   const { currentTheme } = useDarkMode();
   const [refreshKey, setRefreshKey] = useState(0);
-  
-  // Use the stats hooks
+
+  // Always call hooks unconditionally
   const { stats: userStats, refresh: refreshUserStats } = useUserStats();
   const { stats: storeStats, loading: storeStatsLoading } = useStoreStats();
-  const { stats: deliveryStats, loading: deliveryStatsLoading } = useDeliveryStats();
+  const isStore = user?.role === "store";
 
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
@@ -62,6 +64,41 @@ export default function Profile() {
     return null;
   }
 
+  if (user?.role === "admin") {
+    return (
+      <ErrorPage
+        title="Accès non autorisé"
+        message="Les administrateurs doivent utiliser le Dashboard pour gérer la plateforme."
+        errorCode="403"
+        backgroundColor={currentTheme.background.primary}
+        textColor={currentTheme.text.primary}
+        action={
+          <Link
+            href="/admin/dashboard"
+            style={{
+              display: 'inline-block',
+              padding: '0.75rem 1.5rem',
+              background: currentTheme.interactive.primary,
+              color: currentTheme.text.inverse,
+              borderRadius: '0.5rem',
+              fontWeight: 600,
+              fontSize: '1rem',
+              textDecoration: 'none',
+              transition: 'background 0.2s',
+            }}
+          >
+            Aller au Dashboard
+          </Link>
+        }
+      />
+    );
+  }
+
+  if (user?.role === "delivery") {
+    // Redirect handled in _app.tsx, so just return null
+    return null;
+  }
+
   return (
     <div
       className="min-h-screen"
@@ -103,7 +140,7 @@ export default function Profile() {
               <ProfileForm onSuccess={handleProfileUpdate} />
 
               {/* Profile Stats */}
-              <ProfileStats stats={userStats} />
+              <ProfileStats stats={isStore ? userStats : { orders: 0, reviews: 0, favorites: 0, totalSpent: 0 }} />
             </div>
 
             {/* Right Column - Actions */}
@@ -207,107 +244,6 @@ export default function Profile() {
                       className="text-sm"
                       style={{ color: currentTheme.text.muted }}>
                       Note moyenne
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {user?.role === "delivery" && (
-            <div className="mt-8">
-              <div
-                className="rounded-2xl p-6"
-                style={{
-                  backgroundColor: currentTheme.background.secondary,
-                  border: `1px solid ${currentTheme.border.primary}`,
-                }}>
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3
-                      className="text-xl font-semibold mb-1"
-                      style={{ color: currentTheme.text.primary }}>
-                      Livraisons
-                    </h3>
-                    <p
-                      className="text-sm"
-                      style={{ color: currentTheme.text.muted }}>
-                      Suivez vos livraisons en cours
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => router.push("/delivery")}
-                    className="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200"
-                    style={{
-                      backgroundColor: currentTheme.interactive.primary,
-                      color: "white",
-                    }}>
-                    Voir les Livraisons
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div
-                    className="p-4 rounded-xl text-center"
-                    style={{
-                      backgroundColor: currentTheme.background.tertiary,
-                      border: `1px solid ${currentTheme.border.primary}`,
-                    }}>
-                    <div
-                      className="text-2xl font-bold mb-1"
-                      style={{ color: currentTheme.text.primary }}>
-                      {deliveryStatsLoading ? (
-                        <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 rounded"></div>
-                      ) : (
-                        deliveryStats.assignedOrders
-                      )}
-                    </div>
-                    <div
-                      className="text-sm"
-                      style={{ color: currentTheme.text.muted }}>
-                      Commandes assignées
-                    </div>
-                  </div>
-                  <div
-                    className="p-4 rounded-xl text-center"
-                    style={{
-                      backgroundColor: currentTheme.background.tertiary,
-                      border: `1px solid ${currentTheme.border.primary}`,
-                    }}>
-                    <div
-                      className="text-2xl font-bold mb-1"
-                      style={{ color: currentTheme.text.primary }}>
-                      {deliveryStatsLoading ? (
-                        <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 rounded"></div>
-                      ) : (
-                        deliveryStats.deliveredOrders
-                      )}
-                    </div>
-                    <div
-                      className="text-sm"
-                      style={{ color: currentTheme.text.muted }}>
-                      Livraisons terminées
-                    </div>
-                  </div>
-                  <div
-                    className="p-4 rounded-xl text-center"
-                    style={{
-                      backgroundColor: currentTheme.background.tertiary,
-                      border: `1px solid ${currentTheme.border.primary}`,
-                    }}>
-                    <div
-                      className="text-2xl font-bold mb-1"
-                      style={{ color: currentTheme.text.primary }}>
-                      {deliveryStatsLoading ? (
-                        <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 rounded"></div>
-                      ) : (
-                        deliveryStats.pendingDeliveries
-                      )}
-                    </div>
-                    <div
-                      className="text-sm"
-                      style={{ color: currentTheme.text.muted }}>
-                      Livraisons en cours
                     </div>
                   </div>
                 </div>
