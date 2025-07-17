@@ -8,8 +8,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  mobile: string;
   role: "admin" | "store" | "delivery";
-  status: "actif" | "inactif";
+  status: "active" | "inactive" | "suspended" | "deleted";
   orderCount: number;
   createdAt: string;
 }
@@ -64,6 +65,15 @@ export const usersResource: AdminResource<User> = {
   tableColumns: [
     { header: "Nom", accessor: "name" },
     { header: "Email", accessor: "email" },
+    {
+      header: "N° de téléphone",
+      accessor: "mobile",
+      render: (value) => {
+        // Remove '+216' if present
+        const phone = typeof value === 'string' ? value.replace(/^\+216\s?/, '') : value;
+        return phone;
+      },
+    },
     {
       header: "Rôle",
       accessor: "role",
@@ -469,9 +479,19 @@ export const categoriesResource: AdminResource<Category> = {
   displayName: "catégories",
   tableColumns: [
     { header: "Nom", accessor: "name" },
-    { header: "Parent", accessor: "parentName" },
+    { header: "Slug", accessor: "slug" },
+    {
+      header: "Parent",
+      accessor: "parentName",
+      render: (value) => !value ? 'Racine' : value,
+    },
     { header: "Niveau", accessor: "level" },
     { header: "Sous-catégories", accessor: "subCategoryCount" },
+    {
+      header: "Produits",
+      accessor: "productCount",
+      render: (value) => (value == null ? 0 : value),
+    },
     { header: "Créé le", accessor: "createdAt" },
   ],
   bulkActions: [
@@ -485,22 +505,19 @@ export const categoriesResource: AdminResource<Category> = {
   ],
   searchOptions: [
     { label: "Toutes" as React.ReactNode, value: "all" },
-    { label: "Niveau 1" as React.ReactNode, value: "level-1" },
-    { label: "Niveau 2" as React.ReactNode, value: "level-2" },
-    { label: "Niveau 3+" as React.ReactNode, value: "level-3" },
+    { label: "Sans parent" as React.ReactNode, value: "root" },
+    { label: "Avec parent" as React.ReactNode, value: "child" },
   ],
   sortOptions: [
     { label: "Nom (A-Z)" as React.ReactNode, value: "name-asc" },
     { label: "Nom (Z-A)" as React.ReactNode, value: "name-desc" },
-    { label: "Niveau (↑)" as React.ReactNode, value: "level-asc" },
-    { label: "Niveau (↓)" as React.ReactNode, value: "level-desc" },
-    { label: "Produits (↑)" as React.ReactNode, value: "products-asc" },
-    { label: "Produits (↓)" as React.ReactNode, value: "products-desc" },
-    { label: "Date (récent)" as React.ReactNode, value: "date-desc" },
-    { label: "Date (ancien)" as React.ReactNode, value: "date-asc" },
+    { label: "Niveau (croissant)" as React.ReactNode, value: "level-asc" },
+    { label: "Niveau (décroissant)" as React.ReactNode, value: "level-desc" },
+    { label: "Date de création (récent)" as React.ReactNode, value: "createdAt-desc" },
+    { label: "Date de création (ancien)" as React.ReactNode, value: "createdAt-asc" },
   ],
   addButtonText: "Ajouter une catégorie",
   addButtonLink: "/admin/categories/add",
-  deleteConfirmationText: (category: Category) => category.name,
+  deleteConfirmationText: (item) => `Supprimer la catégorie "${item.name}" ?`,
 };
 

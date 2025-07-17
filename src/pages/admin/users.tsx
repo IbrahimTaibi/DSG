@@ -42,8 +42,8 @@ export default function AdminUsers() {
   // Filter and sort users
   let filteredUsers = users.filter((user) => {
     if (filter === "all") return true;
-    if (filter === "actif") return user.status === "actif";
-    if (filter === "inactif") return user.status === "inactif";
+    if (filter === "actif") return user.status === "active";
+    if (filter === "inactif") return user.status === "inactive";
     if (filter === "admin") return user.role === "admin";
     if (filter === "store") return user.role === "store";
     if (filter === "delivery") return user.role === "delivery";
@@ -156,8 +156,8 @@ export default function AdminUsers() {
 
   // Calculate stats for UserStats component
   const totalUsers = users.length;
-  const activeUsers = users.filter((user) => user.status === "actif").length;
-  const inactiveUsers = users.filter((user) => user.status === "inactif").length;
+  const activeUsers = users.filter((user) => user.status === "active").length;
+  const inactiveUsers = users.filter((user) => user.status === "inactive").length;
 
   return (
     <>

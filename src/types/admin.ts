@@ -66,6 +66,8 @@ export interface AdminPageProps<T> {
   onFilterChange: (filter: string) => void;
   sort: string;
   onSortChange: (sort: string) => void;
+  expandedRows?: string[];
+  onRowExpand?: (id: string, expanded: boolean) => void;
 }
 
 export interface User {

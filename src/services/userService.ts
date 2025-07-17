@@ -106,4 +106,22 @@ export async function updateOrderStatus(orderId: string, status: string) {
   });
   if (!res.ok) throw new Error("Failed to update order status");
   return await res.json();
+}
+
+export async function adminCreateUser(data: Record<string, unknown>) {
+  const res = await fetch(`${API_BASE}/api/auth/admin-create`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+    credentials: "include",
+  });
+  if (!res.ok) {
+    let errorMsg = "Failed to create user";
+    try {
+      const errData = await res.json();
+      if (errData && errData.message) errorMsg = errData.message;
+    } catch {}
+    throw new Error(errorMsg);
+  }
+  return await res.json();
 } 

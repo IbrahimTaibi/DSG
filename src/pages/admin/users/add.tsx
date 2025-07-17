@@ -1,16 +1,10 @@
 import AdminLayout from "@/components/admin/layout/AdminLayout";
 import SectionHeader from "@/components/ui/SectionHeader";
+import { UserFormData } from "@/components/forms/UserForm";
 import UserForm from "@/components/forms/UserForm";
 import React from "react";
 import { useRouter } from "next/router";
 import { useDarkMode } from "@/contexts/DarkModeContext";
-
-interface UserFormData {
-  name: string;
-  email: string;
-  role: string;
-  status: "active" | "inactive";
-}
 
 export default function AddUser() {
   const router = useRouter();

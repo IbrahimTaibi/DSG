@@ -15,6 +15,8 @@ import { formatCurrency } from "@/config/currency";
 import Modal from "@/components/ui/Modal";
 import NewOrderForm from "@/components/admin/forms/NewOrderForm";
 import { createOrder } from "@/services/orderService";
+import UserForm from "@/components/forms/UserForm";
+import { adminCreateUser } from "@/services/userService";
 
 export default function AdminPage<T extends { id: string }>({
   resource,
@@ -40,6 +42,10 @@ export default function AdminPage<T extends { id: string }>({
   showSubFilter = false,
   renderExpandedContent,
   onAddOrder,
+  hideAddButton = false,
+  onAdd,
+  expandedRows,
+  onRowExpand,
 }: AdminPageProps<T> & {
   statsComponent?: React.ReactNode;
   subFilter?: string;
@@ -47,14 +53,21 @@ export default function AdminPage<T extends { id: string }>({
   showSubFilter?: boolean;
   renderExpandedContent?: (row: T) => React.ReactNode;
   onAddOrder?: () => void;
+  hideAddButton?: boolean;
+  onAdd?: () => void;
+  expandedRows?: string[];
+  onRowExpand?: (id: string, expanded: boolean) => void;
 }) {
   const { currentTheme } = useDarkMode();
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const [deletingItem, setDeletingItem] = React.useState<T | null>(null);
-  const [expandedRows, setExpandedRows] = React.useState<string[]>([]);
+  // Local state for expanded rows if not controlled by props
+  const [localExpandedRows, setLocalExpandedRows] = React.useState<string[]>([]);
   const [showAddOrderModal, setShowAddOrderModal] = React.useState(false);
   const [addOrderError, setAddOrderError] = React.useState<string | null>(null);
   const [addOrderSuccess, setAddOrderSuccess] = React.useState(false);
+  const [addUserSuccess, setAddUserSuccess] = React.useState(false);
+  const [addUserError, setAddUserError] = React.useState<string | null>(null);
 
   const handleBulkAction = (action: string) => {
     onBulkAction(action, selectedItems);
@@ -227,6 +240,16 @@ export default function AdminPage<T extends { id: string }>({
             ✅ Commande créée avec succès !
           </div>
         )}
+        {addUserSuccess && (
+          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded shadow-lg text-lg font-semibold animate-fade-in-out">
+            ✅ Utilisateur créé avec succès !
+          </div>
+        )}
+        {addUserError && (
+          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded shadow-lg text-lg font-semibold animate-fade-in-out">
+            ❌ {addUserError}
+          </div>
+        )}
         <SectionHeader
           title={`Gestion des ${resource.displayName}`}
           subtitle={`Liste et gestion des ${resource.displayName} du site.`}
@@ -271,76 +294,102 @@ export default function AdminPage<T extends { id: string }>({
             ) : undefined
           }
           right={
-            <>
-              <Button
-                // Remove any href or navigation logic
-                onClick={() => setShowAddOrderModal(true)}
-                className="px-6 py-2 font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-lg"
-                style={{
-                  color: currentTheme.text.inverse,
-                  background: currentTheme.interactive.primary,
-                  border: `1.5px solid ${currentTheme.interactive.primary}`,
-                }}>
-                <svg
-                  width="16"
-                  height="16"
-                  fill="none"
-                  viewBox="0 0 16 16"
-                  className="mr-2">
-                  <path
-                    d="M8 2v12M2 8h12"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span className="hidden sm:inline">{resource.addButtonText}</span>
-                <span className="sm:hidden">Ajouter</span>
-              </Button>
-              <Modal
-                isOpen={showAddOrderModal}
-                onClose={() => setShowAddOrderModal(false)}
-                title="Nouvelle commande"
-                size="md"
-              >
-                {resource.name === "orders" ? (
-                  <NewOrderForm
-                    onCancel={() => setShowAddOrderModal(false)}
-                    onSubmit={async (orderData: { clientId: string; address: string; city: string; state: string; zip: string; products: Array<{ productId: string; quantity: number }> }) => {
-                      setAddOrderError(null);
-                      try {
-                        // Map fields to backend format
-                        const payload = {
-                          store: orderData.clientId,
-                          address: {
-                            address: orderData.address,
-                            city: orderData.city,
-                            state: orderData.state,
-                            zipCode: orderData.zip,
-                          },
-                          products: orderData.products.map((p: { productId: string; quantity: number }) => ({
-                            product: p.productId,
-                            quantity: p.quantity,
-                          })),
-                        };
-                        await createOrder(payload);
-                        setShowAddOrderModal(false);
-                        setAddOrderSuccess(true);
-                        if (onAddOrder) onAddOrder();
-                        setTimeout(() => setAddOrderSuccess(false), 3500);
-                      } catch (err) {
-                        setAddOrderError((err as Error).message || "Erreur lors de la création de la commande.");
-                      }
-                    }}
-                  />
-                ) : (
-                  <NewOrderForm onCancel={() => setShowAddOrderModal(false)} />
-                )}
-                {addOrderError && (
-                  <div style={{ color: 'red', marginTop: 8 }}>{addOrderError}</div>
-                )}
-              </Modal>
-            </>
+            hideAddButton ? null : (
+              <>
+                <Button
+                  onClick={onAdd ? onAdd : () => setShowAddOrderModal(true)}
+                  className="px-6 py-2 font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                  style={{
+                    color: currentTheme.text.inverse,
+                    background: currentTheme.interactive.primary,
+                    border: `1.5px solid ${currentTheme.interactive.primary}`,
+                  }}>
+                  <svg
+                    width="16"
+                    height="16"
+                    fill="none"
+                    viewBox="0 0 16 16"
+                    className="mr-2">
+                    <path
+                      d="M8 2v12M2 8h12"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="hidden sm:inline">{resource.addButtonText}</span>
+                  <span className="sm:hidden">Ajouter</span>
+                </Button>
+                <Modal
+                  isOpen={showAddOrderModal}
+                  onClose={() => setShowAddOrderModal(false)}
+                  title={resource.name === "orders" ? "Nouvelle commande" : resource.name === "users" ? "Ajouter un utilisateur" : resource.addButtonText}
+                  size="md"
+                >
+                  {resource.name === "orders" ? (
+                    <NewOrderForm
+                      onCancel={() => setShowAddOrderModal(false)}
+                      onSubmit={async (orderData: { clientId: string; address: string; city: string; state: string; zip: string; products: Array<{ productId: string; quantity: number }> }) => {
+                        setAddOrderError(null);
+                        try {
+                          // Map fields to backend format
+                          const payload = {
+                            store: orderData.clientId,
+                            address: {
+                              address: orderData.address,
+                              city: orderData.city,
+                              state: orderData.state,
+                              zipCode: orderData.zip,
+                            },
+                            products: orderData.products.map((p: { productId: string; quantity: number }) => ({
+                              product: p.productId,
+                              quantity: p.quantity,
+                            })),
+                          };
+                          await createOrder(payload);
+                          setShowAddOrderModal(false);
+                          setAddOrderSuccess(true);
+                          if (onAddOrder) onAddOrder();
+                          setTimeout(() => setAddOrderSuccess(false), 3500);
+                        } catch (err) {
+                          setAddOrderError((err as Error).message || "Erreur lors de la création de la commande.");
+                        }
+                      }}
+                    />
+                  ) : resource.name === "users" ? (
+                    <UserForm
+                      onCancel={() => setShowAddOrderModal(false)}
+                      onSubmit={async (userData) => {
+                        setAddUserError(null);
+                        try {
+                          // Only send allowed fields
+                          const payload: any = {
+                            name: userData.name,
+                            mobile: userData.mobile,
+                            password: userData.password,
+                            role: userData.role,
+                          };
+                          if (userData.email && userData.email.trim() !== "") {
+                            payload.email = userData.email;
+                          }
+                          await adminCreateUser(payload);
+                          setShowAddOrderModal(false);
+                          setAddUserSuccess(true);
+                          setTimeout(() => setAddUserSuccess(false), 3500);
+                        } catch (err) {
+                          setAddUserError((err as Error).message || "Erreur lors de la création de l'utilisateur.");
+                        }
+                      }}
+                    />
+                  ) : (
+                    <NewOrderForm onCancel={() => setShowAddOrderModal(false)} />
+                  )}
+                  {addOrderError && (
+                    <div style={{ color: 'red', marginTop: 8 }}>{addOrderError}</div>
+                  )}
+                </Modal>
+              </>
+            )
           }
         />
 
@@ -355,13 +404,11 @@ export default function AdminPage<T extends { id: string }>({
             onSelectAll={onSelectAll}
             idField="id"
             expandable={true}
-            expandedRows={expandedRows}
-            onRowExpand={(id, expanded) => {
-              if (expanded) {
-                setExpandedRows((prev) => [...prev, id]);
-              } else {
-                setExpandedRows((prev) => prev.filter((rowId) => rowId !== id));
-              }
+            expandedRows={expandedRows !== undefined ? expandedRows : localExpandedRows}
+            onRowExpand={onRowExpand !== undefined ? onRowExpand : (id, expanded) => {
+              setLocalExpandedRows((prev) =>
+                expanded ? [...prev, id] : prev.filter((rowId) => rowId !== id)
+              );
             }}
             renderExpandedContent={renderExpandedContent}
           />

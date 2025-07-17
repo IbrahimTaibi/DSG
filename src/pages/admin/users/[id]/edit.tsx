@@ -1,5 +1,6 @@
 import AdminLayout from "@/components/admin/layout/AdminLayout";
 import SectionHeader from "@/components/ui/SectionHeader";
+import { UserFormData } from "@/components/forms/UserForm";
 import UserForm from "@/components/forms/UserForm";
 import React from "react";
 import { useRouter } from "next/router";
@@ -14,15 +15,8 @@ interface User {
   status: "active" | "inactive";
   orderCount: number;
   hasActiveOrder: boolean;
+  mobile: string;
 }
-
-interface UserFormData {
-  name: string;
-  email: string;
-  role: string;
-  status: "active" | "inactive";
-}
-
 
 
 export default function EditUser() {
@@ -117,7 +111,12 @@ export default function EditUser() {
             border: `1px solid ${currentTheme.border.primary}`,
           }}>
           <UserForm
-            user={user}
+            user={{
+              ...user,
+              mobile: user.mobile || "",
+              createdAt: (user as any).createdAt ?? "",
+              role: user.role as "admin" | "store" | "delivery",
+            }}
             onSubmit={handleUpdateUser}
             onCancel={handleCancel}
             isLoading={isLoading}

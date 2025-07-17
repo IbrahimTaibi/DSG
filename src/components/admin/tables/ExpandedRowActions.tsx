@@ -71,19 +71,12 @@ const AddressButton: React.FC<{ addressString: string; currentTheme: { text: { s
   </span>
 );
 
-// Local UserFormData type to match UserForm
-interface UserFormData {
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-}
-
 // Local AdminUser type to match adminResources User
 interface AdminUser {
   id: string;
   name: string;
   email: string;
+  mobile: string;
   role: string;
   status: string;
   orderCount: number;
@@ -293,6 +286,53 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
           color: currentTheme.status.info,
           bgColor: currentTheme.status.info + "15",
         });
+        // Add Changer le statut for users
+        if (onToggleStatus) {
+          baseActions.push({
+            label: "Changer le statut",
+            onClick: () => onToggleStatus(row),
+            icon: (
+              <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+                <path
+                  d="M8 2a6 6 0 100 12A6 6 0 008 2zM4 8a4 4 0 118 0 4 4 0 01-8 0z"
+                  fill="currentColor"
+                />
+              </svg>
+            ),
+            color: currentTheme.status.info,
+            bgColor: currentTheme.status.info + "15",
+          });
+        }
+        // Add Modifier (Edit) button for users
+        baseActions.push({
+          label: "Modifier",
+          onClick: () => setShowEditModal(true),
+          icon: (
+            <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+              <path
+                d="M12.854 2.146a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3-3a.5.5 0 010-.708l3-3a.5.5 0 01.708 0l7 7z"
+                fill="currentColor"
+              />
+            </svg>
+          ),
+          color: currentTheme.status.info,
+          bgColor: currentTheme.status.info + "15",
+        });
+        // Add Supprimer (Delete) button for users
+        baseActions.push({
+          label: "Supprimer",
+          onClick: () => setShowDeleteModal(true),
+          icon: (
+            <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+              <path
+                d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z"
+                fill="currentColor"
+              />
+            </svg>
+          ),
+          color: currentTheme.status.error,
+          bgColor: currentTheme.status.error + "15",
+        });
         break;
       case "reviews":
         baseActions.push({
@@ -363,8 +403,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
             bgColor: currentTheme.status.error + "15",
           },
         ]
-      : [
-          ...(onToggleStatus
+      : (resource.name === "orders"
             ? [
                 {
                   label: "Changer le statut",
@@ -381,36 +420,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
                   bgColor: currentTheme.status.info + "15",
                 },
               ]
-            : []),
-          {
-            label: "Modifier",
-            onClick: resource.name === "users" ? () => setShowEditModal(true) : () => onEdit(row),
-            icon: (
-              <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                <path
-                  d="M12.854 2.146a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3-3a.5.5 0 010-.708l3-3a.5.5 0 01.708 0l7 7z"
-                  fill="currentColor"
-                />
-              </svg>
-            ),
-            color: currentTheme.status.info,
-            bgColor: currentTheme.status.info + "15",
-          },
-          {
-            label: "Supprimer",
-            onClick: resource.name === "users" ? () => setShowDeleteModal(true) : () => onDelete(row),
-            icon: (
-              <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                <path
-                  d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z"
-                  fill="currentColor"
-                />
-              </svg>
-            ),
-            color: currentTheme.status.error,
-            bgColor: currentTheme.status.error + "15",
-          },
-        ]),
+            : [])),
   ];
 
   // Debug logs for troubleshooting
@@ -624,19 +634,33 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
         >
           <UserForm
             user={{
-              ...(row as unknown as AdminUser),
-              status: ((row as unknown as AdminUser).status === 'actif'
-                ? 'active'
-                : (row as unknown as AdminUser).status === 'inactif'
-                ? 'inactive'
-                : ((row as unknown as AdminUser).status as 'active' | 'inactive'))
+              id: (row as any).id,
+              name: (row as any).name,
+              email: (row as any).email,
+              mobile: (row as any).mobile,
+              role: (row as any).role,
+              status: (row as any).status,
+              orderCount: (row as any).orderCount ?? 0,
+              createdAt: (row as any).createdAt ?? '',
             }}
             isLoading={editLoading}
             onCancel={() => setShowEditModal(false)}
-            onSubmit={async (formData: UserFormData) => {
+            onSubmit={async (formData) => {
               setEditLoading(true);
               try {
-                const updated = await updateUser(row.id, formData);
+                const payload: any = {
+                  name: formData.name,
+                  mobile: formData.mobile,
+                  role: formData.role,
+                  status: formData.status,
+                };
+                if (formData.email && formData.email.trim() !== "") {
+                  payload.email = formData.email;
+                }
+                if (formData.password && formData.password.trim() !== "") {
+                  payload.password = formData.password;
+                }
+                const updated = await updateUser(row.id, payload);
                 setShowEditModal(false);
                 if (onOrderStatusChange) onOrderStatusChange('refresh');
                 // Ensure id is present for local state update
@@ -648,6 +672,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
                 setEditLoading(false);
               }
             }}
+            hidePassword={true}
           />
         </Modal>
       )}

@@ -3,8 +3,8 @@ import { User } from "@/config/adminResources";
 export function filterUsers(users: User[], filter: string, search: string, sort: string): User[] {
   let filtered = users.filter((user) => {
     if (filter === "all") return true;
-    if (filter === "actif") return user.status === "actif";
-    if (filter === "inactif") return user.status === "inactif";
+    if (filter === "actif") return user.status === "active";
+    if (filter === "inactif") return user.status === "inactive";
     if (filter === "admin") return user.role === "admin";
     if (filter === "store") return user.role === "store";
     if (filter === "delivery") return user.role === "delivery";

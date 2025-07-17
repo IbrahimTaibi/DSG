@@ -7,22 +7,28 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
-  status: "active" | "inactive";
+  mobile: string;
+  role: "admin" | "store" | "delivery";
+  status: "active" | "inactive" | "suspended" | "deleted";
+  orderCount: number;
+  createdAt: string;
 }
 
-interface UserFormData {
+export interface UserFormData {
   name: string;
-  email: string;
+  email?: string;
+  mobile: string;
+  password: string;
   role: string;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "suspended" | "deleted";
 }
 
 interface UserFormProps {
   user?: User | null;
-  onSubmit: (userData: UserFormData) => void;
+  onSubmit: (userData: UserFormData) => void | Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
+  hidePassword?: boolean;
 }
 
 const UserForm: React.FC<UserFormProps> = ({
@@ -30,29 +36,47 @@ const UserForm: React.FC<UserFormProps> = ({
   onSubmit,
   onCancel,
   isLoading = false,
+  hidePassword = false,
 }) => {
   const { currentTheme } = useDarkMode();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    role: "user",
-    status: "active" as "active" | "inactive",
+    mobile: "",
+    password: "",
+    role: "store",
+    status: "active",
   });
 
   useEffect(() => {
     if (user) {
       setFormData({
         name: user.name,
-        email: user.email,
+        email: user.email || "",
+        mobile: user.mobile || "",
+        password: "",
         role: user.role,
-        status: user.status,
+        status: (user as any).status || "active",
       });
     }
   }, [user]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    if (!formData.mobile.trim() || (!hidePassword && !formData.password.trim())) return; // required
+    const payload: any = {
+      name: formData.name,
+      mobile: formData.mobile,
+      role: formData.role,
+      status: formData.status,
+    };
+    if (formData.email && formData.email.trim() !== "") {
+      payload.email = formData.email;
+    }
+    if (formData.password && formData.password.trim() !== "") {
+      payload.password = formData.password;
+    }
+    onSubmit(payload);
   };
 
   const handleChange = (field: string, value: string) => {
@@ -81,14 +105,60 @@ const UserForm: React.FC<UserFormProps> = ({
           <label
             className="block text-sm font-medium mb-2"
             style={{ color: currentTheme.text.primary }}>
-            Email *
+            Téléphone *
+          </label>
+          <Input
+            type="tel"
+            value={formData.mobile}
+            onChange={(e) => handleChange("mobile", e.target.value)}
+            placeholder="+216 12 345 678"
+            required
+          />
+        </div>
+
+        {!hidePassword ? (
+          <div>
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: currentTheme.text.primary }}>
+              Mot de passe *
+            </label>
+            <Input
+              type="password"
+              value={formData.password}
+              onChange={(e) => handleChange("password", e.target.value)}
+              placeholder="Mot de passe"
+              required
+            />
+          </div>
+        ) : (
+          <div>
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: currentTheme.text.primary }}>
+              Nouveau mot de passe
+            </label>
+            <Input
+              type="password"
+              value={formData.password}
+              onChange={(e) => handleChange("password", e.target.value)}
+              placeholder="Laisser vide pour ne pas changer"
+            />
+          </div>
+        )}
+
+        <div>
+          <label
+            className="block text-sm font-medium mb-2"
+            style={{ color: currentTheme.text.primary }}>
+            Email
           </label>
           <Input
             type="email"
             value={formData.email}
             onChange={(e) => handleChange("email", e.target.value)}
             placeholder="entrez@email.com"
-            required
+            pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
           />
         </div>
 
@@ -112,6 +182,7 @@ const UserForm: React.FC<UserFormProps> = ({
             <option value="store">Magasin</option>
             <option value="delivery">Livreur</option>
             <option value="admin">Administrateur</option>
+            <option value="support">Support</option>
           </select>
         </div>
 
@@ -131,9 +202,12 @@ const UserForm: React.FC<UserFormProps> = ({
               borderColor: currentTheme.border.primary,
               border: `1px solid ${currentTheme.border.primary}`,
             }}
-            required>
+            required
+          >
             <option value="active">Actif</option>
             <option value="inactive">Inactif</option>
+            <option value="suspended">Suspendu</option>
+            <option value="deleted">Supprimé</option>
           </select>
         </div>
       </div>
