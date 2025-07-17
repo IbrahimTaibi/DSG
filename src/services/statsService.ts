@@ -37,6 +37,15 @@ export const fetchUserStats = async (token: string): Promise<UserStats> => {
     });
 
     if (!response.ok) {
+      if (response.status === 403) {
+        // Forbidden: return default stats, no error
+        return {
+          orders: 0,
+          reviews: 0,
+          favorites: 0,
+          totalSpent: 0,
+        };
+      }
       throw new Error('Failed to fetch user stats');
     }
 

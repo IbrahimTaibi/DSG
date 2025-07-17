@@ -4,7 +4,7 @@ import { useNotifications } from "../contexts/NotificationContext";
 
 const NotificationsPage: React.FC = () => {
   const { currentTheme } = useDarkMode();
-  const { notifications, fetchNotifications } = useNotifications();
+  const { notifications, fetchNotifications, markAsRead } = useNotifications();
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -67,7 +67,10 @@ const NotificationsPage: React.FC = () => {
                     border: `1px solid ${currentTheme.border.primary}`,
                     cursor: 'pointer',
                   }}
-                  onClick={() => setExpandedId(isExpanded ? null : notif._id)}
+                  onClick={() => {
+                    setExpandedId(isExpanded ? null : notif._id);
+                    if (!notif.read) markAsRead(notif._id);
+                  }}
                   tabIndex={0}
                   role="button"
                   aria-expanded={isExpanded}

@@ -109,8 +109,8 @@ const UserForm: React.FC<UserFormProps> = ({
               border: `1px solid ${currentTheme.border.primary}`,
             }}
             required>
-            <option value="user">Utilisateur</option>
-            <option value="provider">Fournisseur</option>
+            <option value="store">Magasin</option>
+            <option value="delivery">Livreur</option>
             <option value="admin">Administrateur</option>
           </select>
         </div>

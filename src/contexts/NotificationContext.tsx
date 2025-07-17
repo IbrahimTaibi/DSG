@@ -19,6 +19,7 @@ interface NotificationContextType {
   markAllAsRead: () => void;
   fetchNotifications: () => Promise<void>;
   clearNotifications: () => void;
+  resetUnreadCount: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -108,6 +109,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setUnreadCount(0);
   }, []);
 
+  const resetUnreadCount = useCallback(() => {
+    setUnreadCount(0);
+  }, []);
+
   // Listen for real-time notifications
   useEffect(() => {
     if (!socket || !isConnected) return;
@@ -133,7 +138,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, fetchNotifications, clearNotifications]);
 
-  const value: NotificationContextType = {
+  const value: NotificationContextType & { resetUnreadCount: () => void } = {
     notifications,
     unreadCount,
     addNotification,
@@ -141,6 +146,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     markAllAsRead,
     fetchNotifications,
     clearNotifications,
+    resetUnreadCount,
   };
 
   return (

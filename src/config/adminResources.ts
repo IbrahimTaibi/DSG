@@ -259,7 +259,6 @@ export const ordersResource: AdminResource<Order> = {
     { header: "Montant total", accessor: "totalAmount" },
     { header: "Paiement", accessor: "paymentStatus" },
     { header: "Date", accessor: "createdAt" },
-    { header: "Livraison", accessor: "deliveryDate" },
   ],
   bulkActions: [
     {

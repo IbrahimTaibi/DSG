@@ -10,6 +10,9 @@ import OrderStatusChangeModal from "@/components/admin/modals/OrderStatusChangeM
 import ErrorModal from "@/components/ui/ErrorModal";
 import DeliveryAgentSelector from "@/components/admin/modals/DeliveryAgentSelector";
 import AdminActionButtons, { AdminActionButton } from "@/components/admin/tables/AdminActionButtons";
+import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
+import UserForm from "@/components/forms/UserForm";
+import { updateUser } from "@/services/userService";
 
 interface DeliveryAgent extends BaseDeliveryAgent {
   _id?: string;
@@ -25,6 +28,8 @@ interface ExpandedRowActionsProps<T> {
   onDelete: (item: T) => void;
   loading: boolean;
   onOrderStatusChange?: (newStatus: string) => void;
+  // Add for user update
+  onUserUpdated?: (updatedUser: T) => void;
 }
 
 // Helper type for objects that might have _id or id
@@ -66,6 +71,25 @@ const AddressButton: React.FC<{ addressString: string; currentTheme: { text: { s
   </span>
 );
 
+// Local UserFormData type to match UserForm
+interface UserFormData {
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+}
+
+// Local AdminUser type to match adminResources User
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  orderCount: number;
+  createdAt: string;
+}
+
 export default function ExpandedRowActions<T extends HasStatusAndId>({
   row,
   resource,
@@ -75,6 +99,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
   onDelete,
   loading,
   onOrderStatusChange,
+  onUserUpdated,
 }: ExpandedRowActionsProps<T>) {
   const { currentTheme } = useDarkMode();
   const [detailsOpen, setDetailsOpen] = React.useState(false);
@@ -94,6 +119,11 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
   const [errorModalOpen, setErrorModalOpen] = React.useState(false);
   const [errorModalMsg, setErrorModalMsg] = React.useState<string>("");
   const [errorModalTitle, setErrorModalTitle] = React.useState<string>("Erreur de transition de statut");
+  // Add state for delete confirmation modal
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+  // Add state for edit modal
+  const [showEditModal, setShowEditModal] = React.useState(false);
+  const [editLoading, setEditLoading] = React.useState(false);
 
   // Allowed transitions map (should match backend)
   const allowedTransitions: Record<string, string[]> = {
@@ -354,7 +384,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
             : []),
           {
             label: "Modifier",
-            onClick: () => onEdit(row),
+            onClick: resource.name === "users" ? () => setShowEditModal(true) : () => onEdit(row),
             icon: (
               <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
                 <path
@@ -368,7 +398,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
           },
           {
             label: "Supprimer",
-            onClick: () => onDelete(row),
+            onClick: resource.name === "users" ? () => setShowDeleteModal(true) : () => onDelete(row),
             icon: (
               <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
                 <path
@@ -565,6 +595,61 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
           onClose={() => setDetailsOpen(false)}
           product={{ id: (row as WithId)._id || (row as WithId).id || '' }}
         />
+      )}
+      {/* Confirm Delete Modal for users */}
+      {resource.name === "users" && (
+        <ConfirmDeleteModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={() => {
+            setShowDeleteModal(false);
+            onDelete(row);
+          }}
+          loading={loading}
+          userName={(row as unknown as AdminUser).name || ''}
+          textColor={currentTheme.text.primary}
+          borderColor={currentTheme.border.primary}
+          errorColor={currentTheme.status.error}
+          secondaryTextColor={currentTheme.text.secondary}
+        />
+      )}
+      {/* Edit Modal for users */}
+      {resource.name === "users" && (
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          title="Modifier l'utilisateur"
+          size="md"
+          loading={editLoading}
+        >
+          <UserForm
+            user={{
+              ...(row as unknown as AdminUser),
+              status: ((row as unknown as AdminUser).status === 'actif'
+                ? 'active'
+                : (row as unknown as AdminUser).status === 'inactif'
+                ? 'inactive'
+                : ((row as unknown as AdminUser).status as 'active' | 'inactive'))
+            }}
+            isLoading={editLoading}
+            onCancel={() => setShowEditModal(false)}
+            onSubmit={async (formData: UserFormData) => {
+              setEditLoading(true);
+              try {
+                const updated = await updateUser(row.id, formData);
+                setShowEditModal(false);
+                if (onOrderStatusChange) onOrderStatusChange('refresh');
+                // Ensure id is present for local state update
+                if (updated && !updated.id && updated._id) {
+                  updated.id = updated._id;
+                }
+                if (onUserUpdated) onUserUpdated(updated);
+              } finally {
+                setEditLoading(false);
+              }
+            }}
+          />
+        </Modal>
       )}
     </>
   );

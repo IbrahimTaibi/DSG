@@ -5,6 +5,7 @@ import UserStats from "@/components/admin/stats/UserStats";
 import { usersResource, User } from "@/config/adminResources";
 import { fetchUsersWithOrderCount, deleteUser, updateUser } from "@/services/userService";
 import StatusChangeModal from "@/components/ui/StatusChangeModal";
+import ExpandedRowActions from "@/components/admin/tables/ExpandedRowActions";
 
 export default function AdminUsers() {
   const router = useRouter();
@@ -148,6 +149,11 @@ export default function AdminUsers() {
     }
   };
 
+  // Handler to update a user in local state after edit
+  const handleUpdateUserInState = (updatedUser: User) => {
+    setUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u)));
+  };
+
   // Calculate stats for UserStats component
   const totalUsers = users.length;
   const activeUsers = users.filter((user) => user.status === "actif").length;
@@ -185,6 +191,17 @@ export default function AdminUsers() {
             inactiveUsers={inactiveUsers}
           />
         }
+        renderExpandedContent={(user: User) => (
+          <ExpandedRowActions
+            row={user}
+            resource={usersResource}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onToggleStatus={handleToggleStatus}
+            loading={isLoading}
+            onUserUpdated={handleUpdateUserInState}
+          />
+        )}
       />
       <StatusChangeModal
         isOpen={statusModalOpen}

@@ -14,7 +14,7 @@ import { useRouter } from "next/router";
 export default function Header() {
   const { darkMode, toggleDarkMode, currentTheme } = useDarkMode();
   const { user, isAuthenticated, logout } = useAuth();
-  const { notifications, unreadCount, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, resetUnreadCount } = useNotifications();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -49,9 +49,9 @@ export default function Header() {
   const handleShowNotifications = async () => {
     setShowNotifications((v) => !v);
     if (!showNotifications) {
-      // Only mark as read when opening
+      // Only reset unread counter when opening
       try {
-        await markAllAsRead();
+        resetUnreadCount();
       } catch {}
     }
   };
@@ -239,7 +239,12 @@ export default function Header() {
                                 ? "opacity-70"
                                 : "bg-blue-50 dark:bg-blue-900/20"
                             }`}
-                            style={{ cursor: "pointer" }}>
+                            style={{ cursor: "pointer" }}
+                            onClick={() => {
+                              if (!notif.read) markAsRead(notif._id);
+                              router.push('/notifications');
+                            }}
+                          >
                             {/* Icon based on type */}
                             <div className="pt-1">
                               {notif.type === "order" ? (

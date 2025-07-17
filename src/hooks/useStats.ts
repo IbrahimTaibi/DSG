@@ -40,9 +40,14 @@ export const useUserStats = () => {
 
       const userStatsData = await fetchUserStats(token);
       setStats(userStatsData);
-    } catch (err) {
-      console.error('Error loading user stats:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load stats');
+    } catch (err: unknown) {
+      // Suppress error logging for 403 forbidden
+      if (typeof err === 'object' && err !== null && 'message' in err && typeof (err as { message?: string }).message === 'string' && (err as { message: string }).message.includes('403')) {
+        setError(null);
+      } else {
+        console.error('Error loading user stats:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load stats');
+      }
     } finally {
       setLoading(false);
     }
