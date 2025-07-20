@@ -2,6 +2,7 @@ import React from "react";
 import { AdminResource } from "../types/admin";
 import { lightTheme, darkTheme } from "../theme/colors";
 import { Category } from "@/types/admin";
+import { Product } from "@/types/product";
 
 // User type definition
 export interface User {
@@ -29,20 +30,6 @@ export interface Order {
   assignedToName?: string; // Added for the new column
   deleted?: boolean; // Optional, for soft delete support
   statusLabel?: string; // For display
-}
-
-// Product type definition
-export interface Product {
-  id: string;
-  name: string;
-  category: string;
-  additionalCategories: string[];
-  pricePerBox: number;
-  stock: number;
-  status: "active" | "inactive" | "out_of_stock" | "discontinued" | "draft";
-  rating: number;
-  reviewCount: number;
-  createdAt: string;
 }
 
 // Review type definition
@@ -329,11 +316,43 @@ export const productsResource: AdminResource<Product> = {
   displayName: "produits",
   tableColumns: [
     { header: "Nom", accessor: "name" },
-    { header: "Catégories", accessor: "category" },
-    { header: "Prix/Colis (€)", accessor: "pricePerBox" },
+    {
+      header: "Catégories",
+      accessor: "category",
+      render: (value) => {
+        if (Array.isArray(value)) {
+          // If array of categories, join their names if possible
+          return value.map((cat) => typeof cat === "object" && cat !== null && (cat as any).name ? (cat as any).name : String(cat)).join(", ");
+        }
+        if (typeof value === "object" && value !== null && "name" in value) {
+          return (value as any).name;
+        }
+        return value ?? "-";
+      },
+    },
+    {
+      header: "Prix/Colis (€)",
+      accessor: "pricePerBox",
+      render: (value, row) => {
+        if (typeof value !== "undefined") return value;
+        if (row && typeof row === "object" && "price" in row) return (row as any).price;
+        return "-";
+      },
+    },
     { header: "Stock", accessor: "stock" },
     { header: "Statut", accessor: "status" },
-    { header: "Note", accessor: "rating" },
+    {
+      header: "Note",
+      accessor: "rating",
+      render: (value, row) => {
+        let rating = value;
+        if ((typeof rating === "undefined" || rating === null) && row && typeof row === "object" && "averageRating" in row) {
+          rating = (row as any).averageRating;
+        }
+        if (typeof rating !== "number" || isNaN(rating)) rating = 0;
+        return `${Number(rating).toFixed(1)}/5`;
+      },
+    },
     { header: "Avis", accessor: "reviewCount" },
     { header: "Ajouté le", accessor: "createdAt" },
   ],

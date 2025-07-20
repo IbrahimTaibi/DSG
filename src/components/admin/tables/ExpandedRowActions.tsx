@@ -22,7 +22,7 @@ interface DeliveryAgent extends BaseDeliveryAgent {
 interface ExpandedRowActionsProps<T> {
   row: T;
   resource: AdminResource<T>;
-  onPrintInvoice?: (item: T) => void;
+  onPrintInvoice?: (item: T, printerType?: 'big' | 'small') => void;
   onToggleStatus?: (item: T) => void;
   onEdit: (item: T) => void;
   onDelete: (item: T) => void;
@@ -117,6 +117,8 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
   // Add state for edit modal
   const [showEditModal, setShowEditModal] = React.useState(false);
   const [editLoading, setEditLoading] = React.useState(false);
+  const [printModalOpen, setPrintModalOpen] = React.useState(false);
+  const [pendingPrintRow, setPendingPrintRow] = React.useState<T | null>(null);
 
   // Allowed transitions map (should match backend)
   const allowedTransitions: Record<string, string[]> = {
@@ -166,6 +168,46 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
 
   // Define actions based on resource type
   const getActions = (): AdminActionButton[] => {
+    const baseActions: AdminActionButton[] = [];
+    if (resource.name === "products") {
+      baseActions.push(
+        {
+          label: "Voir les détails",
+          onClick: () => setDetailsOpen(true),
+          icon: (
+            <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+              <path d="M14 2H2a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1V3a1 1 0 00-1-1zM2 1a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V3a2 2 0 00-2-2H2z" fill="currentColor" />
+              <path d="M4 5h8v1H4V5zm0 2h8v1H4V7zm0 2h6v1H4V9z" fill="currentColor" />
+            </svg>
+          ),
+          color: currentTheme.status.info,
+          bgColor: currentTheme.status.info + "15",
+        },
+        {
+          label: "Modifier",
+          onClick: () => onEdit(row),
+          icon: (
+            <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+              <path d="M12.854 2.146a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3-3a.5.5 0 010-.708l3-3a.5.5 0 01.708 0l7 7z" fill="currentColor" />
+            </svg>
+          ),
+          color: currentTheme.status.info,
+          bgColor: currentTheme.status.info + "15",
+        },
+        {
+          label: "Supprimer",
+          onClick: () => onDelete(row),
+          icon: (
+            <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+              <path d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z" fill="currentColor" />
+            </svg>
+          ),
+          color: currentTheme.status.error,
+          bgColor: currentTheme.status.error + "15",
+        }
+      );
+      return baseActions;
+    }
     // Only show Edit, Delete, and Show Details for categories
     if (resource.name === "categories") {
       return [
@@ -185,12 +227,15 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
         },
       ];
     }
-    const baseActions: AdminActionButton[] = [
-      ...(onPrintInvoice
+    baseActions.push(
+      ...(resource.name === "orders" && onPrintInvoice && (row as any).status === "delivered"
         ? [
             {
               label: "Imprimer la facture",
-              onClick: () => onPrintInvoice(row),
+              onClick: () => {
+                setPendingPrintRow(row);
+                setPrintModalOpen(true);
+              },
               icon: (
                 <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
                   <path
@@ -204,7 +249,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
             },
           ]
         : []),
-    ];
+    );
 
     // Add resource-specific actions
     switch (resource.name) {
@@ -250,24 +295,7 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
         }
         break;
       case "products":
-        baseActions.push({
-          label: "Voir les détails",
-          onClick: () => setDetailsOpen(true),
-          icon: (
-            <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-              <path
-                d="M14 2H2a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1V3a1 1 0 00-1-1zM2 1a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V3a2 2 0 00-2-2H2z"
-                fill="currentColor"
-              />
-              <path
-                d="M4 5h8v1H4V5zm0 2h8v1H4V7zm0 2h6v1H4V9z"
-                fill="currentColor"
-              />
-            </svg>
-          ),
-          color: currentTheme.status.info,
-          bgColor: currentTheme.status.info + "15",
-        });
+        // This case is now handled by the products specific getActions
         break;
       case "users":
         baseActions.push({
@@ -676,6 +704,53 @@ export default function ExpandedRowActions<T extends HasStatusAndId>({
           />
         </Modal>
       )}
+      {/* Print Invoice Modal */}
+      <Modal
+        isOpen={printModalOpen}
+        onClose={() => setPrintModalOpen(false)}
+        title="Choisissez le type d&apos;imprimante"
+        size="sm"
+      >
+        <div style={{ marginBottom: 24, color: currentTheme.text.primary }}>
+          Pour imprimer la facture, veuillez choisir le type d&apos;imprimante que vous utilisez :
+        </div>
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+          <button
+            style={{
+              padding: '10px 20px',
+              borderRadius: 8,
+              border: 'none',
+              background: currentTheme.status.info,
+              color: '#fff',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            onClick={() => {
+              setPrintModalOpen(false);
+              if (onPrintInvoice && pendingPrintRow) onPrintInvoice(pendingPrintRow, 'big');
+            }}
+          >
+            Imprimante standard
+          </button>
+          <button
+            style={{
+              padding: '10px 20px',
+              borderRadius: 8,
+              border: 'none',
+              background: currentTheme.status.success,
+              color: '#fff',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            onClick={() => {
+              setPrintModalOpen(false);
+              if (onPrintInvoice && pendingPrintRow) onPrintInvoice(pendingPrintRow, 'small');
+            }}
+          >
+            Imprimante thermique
+          </button>
+        </div>
+      </Modal>
     </>
   );
 }

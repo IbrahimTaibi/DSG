@@ -201,8 +201,7 @@ const CheckoutPage: NextPage = () => {
   }
 
   const subtotal = state.total;
-  const tax = subtotal * 0.1;
-  const total = subtotal + tax;
+  const total = subtotal;
 
   return (
     <>
@@ -439,16 +438,6 @@ const CheckoutPage: NextPage = () => {
                       className="font-medium"
                       style={{ color: currentTheme.text.primary }}
                     >Free</span>
-                  </div>
-                  
-                  <div className="flex justify-between text-sm">
-                    <span style={{ color: currentTheme.text.secondary }}>Tax</span>
-                    <span 
-                      className="font-medium"
-                      style={{ color: currentTheme.text.primary }}
-                    >
-                      {format(tax)}
-                    </span>
                   </div>
                   
                   <div 

@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant DB
+
+    User->>Frontend: Place Order
+    Frontend->>Backend: Send Order Data
+    Backend->>DB: Store Order
+    Backend->>Backend: Get Data, Calculate Tax, Decompose Total (TTC)
+    Backend->>DB: Store Invoice (with plain numbers)
+    Admin/Agent->>Frontend: Click Print Invoice
+    Frontend->>Backend: Request Invoice JSON
+    Backend->>Frontend: Send Invoice JSON
+    Frontend->>Printer: Format & Print Invoice 

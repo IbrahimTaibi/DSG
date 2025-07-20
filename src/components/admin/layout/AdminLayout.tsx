@@ -118,7 +118,7 @@ export default function AdminLayout({
   return (
     <AdminProtected>
       <div
-        className="h-screen flex relative overflow-x-auto"
+        className="h-screen flex relative admin-root-container"
         style={{ background: currentTheme.background.primary }}>
         {/* Desktop sidebar */}
         <div className="hidden md:block">{Sidebar}</div>
@@ -179,11 +179,38 @@ export default function AdminLayout({
         </button>
         {/* Main content */}
         <main
-          className="flex-1 p-2 sm:pl-4 sm:pt-4 sm:pb-4 sm:pr-2 md:pl-8 md:pt-8 md:pb-8 md:pr-4 h-full min-w-0 overflow-x-auto overflow-y-auto"
+          className="flex-1 p-2 sm:pl-4 sm:pt-4 sm:pb-4 sm:pr-2 md:pl-8 md:pt-8 md:pb-8 md:pr-4 h-full min-w-0 admin-main-content"
           style={{ background: currentTheme.background.primary }}>
-          <div className="w-full max-w-full overflow-x-auto min-w-0">{children}</div>
+          <div className="w-full max-w-full min-w-0 overflow-x-auto admin-content-wrapper">{children}</div>
         </main>
         <style jsx global>{`
+          /* Prevent horizontal scroll on admin pages globally */
+          .admin-root-container {
+            overflow-x: hidden !important;
+          }
+          .admin-main-content {
+            overflow-x: hidden !important;
+            min-width: 0 !important;
+          }
+          .admin-content-wrapper {
+            min-width: 0 !important;
+            overflow-x: auto !important;
+          }
+          /* Prevent any child from exceeding viewport width on mobile */
+          @media (max-width: 768px) {
+            .admin-root-container, .admin-main-content, .admin-content-wrapper {
+              width: 100vw !important;
+              max-width: 100vw !important;
+              min-width: 0 !important;
+              overflow-x: hidden !important;
+            }
+            .admin-root-container *, .admin-main-content *, .admin-content-wrapper * {
+              box-sizing: border-box !important;
+              max-width: 100vw !important;
+              min-width: 0 !important;
+              word-break: break-word;
+            }
+          }
           .admin-nav-active {
             font-weight: 600;
           }
@@ -193,36 +220,6 @@ export default function AdminLayout({
           }
           .animate-slide-in-right {
             animation: slide-in-right 0.25s cubic-bezier(0.4,0,0.2,1);
-          }
-          @media (max-width: 768px) {
-            .mobile-layout, .mobile-grid, .mobile-grid-item {
-              width: 100% !important;
-              max-width: none !important;
-              margin: 0 !important;
-              left: 0 !important;
-              right: 0 !important;
-            }
-            /* Allow admin content to scroll horizontally on mobile */
-            .admin-content {
-              width: 100% !important;
-              max-width: none !important;
-              overflow-x: auto !important;
-              padding-left: 0 !important;
-              padding-right: 0 !important;
-            }
-            /* Prevent table overflow on mobile */
-            .admin-table-container {
-              width: 100% !important;
-              max-width: 100% !important;
-              overflow-x: auto !important;
-            }
-            /* Ensure cards don't overflow */
-            .admin-card {
-              width: 100% !important;
-              max-width: 100% !important;
-              margin: 0 !important;
-              padding: 12px !important;
-            }
           }
           @media (max-width: 480px) {
             .admin-content {

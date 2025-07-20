@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/router";
 import AdminPage from "@/components/admin/dashboard/AdminPage";
 import OrderStats from "@/components/admin/stats/OrderStats";
 import { ordersResource, Order } from "@/config/adminResources";
-import { formatCurrency } from "@/config/currency";
 import { fetchOrders, deleteOrder as apiDeleteOrder } from "@/services/orderService";
 import ExpandedRowActions from "@/components/admin/tables/ExpandedRowActions";
+import { ThermalPrinter, printToBrowser } from "@/utils/thermalPrinter";
 
 // Define a type for the backend order object
 interface BackendOrder {
@@ -40,6 +40,7 @@ export default function AdminOrders() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [selectedOrders, setSelectedOrders] = React.useState<string[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
 
   const itemsPerPage = 10;
 
@@ -226,344 +227,89 @@ export default function AdminOrders() {
     }
   };
 
-  const handlePrintInvoice = async (order: Order) => {
-    try {
-      // Create invoice content
-      const invoiceContent = `
-        <!DOCTYPE html>
-        <html lang="fr">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Facture - ${order.orderNumber}</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            
-            body { 
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              background: #f5f5f5;
-              color: #333;
-              line-height: 1.6;
-              padding: 20px;
-            }
-            
-            .invoice-container {
-              max-width: 800px;
-              margin: 0 auto;
-              background: white;
-              border-radius: 8px;
-              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-              overflow: hidden;
-            }
-            
-            .invoice-header {
-              background: #2c3e50;
-              color: white;
-              padding: 40px;
-              text-align: center;
-            }
-            
-            .invoice-header h1 {
-              font-size: 2.5rem;
-              font-weight: 300;
-              margin-bottom: 8px;
-            }
-            
-            .invoice-header h2 {
-              font-size: 1.4rem;
-              font-weight: 400;
-              margin-bottom: 4px;
-              opacity: 0.9;
-            }
-            
-            .invoice-header p {
-              font-size: 1rem;
-              opacity: 0.8;
-            }
-            
-            .invoice-content {
-              padding: 40px;
-            }
-            
-            .invoice-details {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 40px;
-              margin-bottom: 40px;
-              padding: 30px;
-              background: #f8f9fa;
-              border-radius: 6px;
-            }
-            
-            .customer-info h3, .order-info h3 {
-              color: #2c3e50;
-              font-size: 1rem;
-              margin-bottom: 16px;
-              font-weight: 600;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-            }
-            
-            .customer-info p, .order-info p {
-              margin-bottom: 8px;
-              font-size: 0.95rem;
-              color: #555;
-            }
-            
-            .customer-info strong, .order-info strong {
-              color: #2c3e50;
-              font-weight: 600;
-            }
-            
-            .invoice-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 30px;
-              border: 1px solid #e1e5e9;
-              border-radius: 6px;
-              overflow: hidden;
-            }
-            
-            .invoice-table th {
-              background: #f8f9fa;
-              color: #2c3e50;
-              padding: 16px 12px;
-              text-align: left;
-              font-weight: 600;
-              font-size: 0.9rem;
-              border-bottom: 2px solid #e1e5e9;
-            }
-            
-            .invoice-table td {
-              padding: 16px 12px;
-              border-bottom: 1px solid #e1e5e9;
-              color: #555;
-              font-size: 0.95rem;
-            }
-            
-            .invoice-table tr:last-child td {
-              border-bottom: none;
-            }
-            
-            .total-section {
-              background: #f8f9fa;
-              padding: 16px 20px;
-              border-radius: 6px;
-              text-align: right;
-              margin-bottom: 30px;
-              border: 1px solid #e1e5e9;
-            }
-            
-            .total-section h3 {
-              font-size: 0.95rem;
-              margin-bottom: 8px;
-              font-weight: 600;
-              color: #2c3e50;
-            }
-            
-            .total-amount {
-              font-size: 1.5rem;
-              font-weight: 700;
-              margin-bottom: 6px;
-              color: #2c3e50;
-            }
-            
-            .payment-status {
-              display: inline-block;
-              padding: 6px 12px;
-              border-radius: 4px;
-              font-size: 0.85rem;
-              font-weight: 600;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-            }
-            
-            .status-paid {
-              background: #d4edda;
-              color: #155724;
-              border: 1px solid #c3e6cb;
-            }
-            
-            .status-pending {
-              background: #fff3cd;
-              color: #856404;
-              border: 1px solid #ffeaa7;
-            }
-            
-            .status-failed {
-              background: #f8d7da;
-              color: #721c24;
-              border: 1px solid #f5c6cb;
-            }
-            
-            .footer {
-              background: #f8f9fa;
-              padding: 24px;
-              text-align: center;
-              border-radius: 6px;
-              border: 1px solid #e1e5e9;
-            }
-            
-            .footer h4 {
-              color: #2c3e50;
-              font-size: 1.1rem;
-              margin-bottom: 12px;
-              font-weight: 600;
-            }
-            
-            .footer p {
-              color: #6c757d;
-              font-size: 0.95rem;
-              margin-bottom: 16px;
-            }
-            
-            .contact-info {
-              display: flex;
-              justify-content: center;
-              gap: 24px;
-              flex-wrap: wrap;
-            }
-            
-            .contact-item {
-              display: flex;
-              align-items: center;
-              gap: 6px;
-              color: #6c757d;
-              font-size: 0.9rem;
-            }
-            
-            .map-link {
-              display: flex;
-              align-items: center;
-              color: #6c757d;
-              text-decoration: none;
-              transition: color 0.2s ease;
-            }
-            
-            .map-link:hover {
-              color: #3498db;
-            }
-            
-            @media print {
-              body { 
-                background: white; 
-                padding: 0;
-              }
-              .invoice-container {
-                box-shadow: none;
-                border-radius: 0;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="invoice-container">
-            <div class="invoice-header">
-              <h1>FACTURE</h1>
-              <h2>DSG Wholesale Groceries</h2>
-              <p>Grossiste en produits alimentaires</p>
-            </div>
-            
-            <div class="invoice-content">
-              <div class="invoice-details">
-                <div class="customer-info">
-                  <h3>Informations Client</h3>
-                  <p><strong>Nom:</strong> ${order.clientName}</p>
-                  <p><strong>Email:</strong> ${order.clientEmail}</p>
-                  <p><strong>Type:</strong> Client professionnel</p>
-                </div>
-                <div class="order-info">
-                  <h3>Détails de la Commande</h3>
-                  <p><strong>N° Commande:</strong> ${order.orderNumber}</p>
-                  <p><strong>Date:</strong> ${new Date(
-                    order.createdAt,
-                  ).toLocaleDateString("fr-FR", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}</p>
-                  <p><strong>Statut:</strong> ${order.status}</p>
-                  <p><strong>Livraison:</strong> ${new Date(
-                    order.deliveryDate,
-                  ).toLocaleDateString("fr-FR")}</p>
-                </div>
-              </div>
-              
-              <table class="invoice-table">
-                <thead>
-                  <tr>
-                    <th>Produit</th>
-                    <th>Quantité</th>
-                    <th>Prix unitaire</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><strong>Commande de produits alimentaires</strong><br><small>Assortiment de produits frais et secs</small></td>
-                    <td>1</td>
-                    <td>${formatCurrency(order.totalAmount)}</td>
-                    <td><strong>${formatCurrency(order.totalAmount)}</strong></td>
-                  </tr>
-                </tbody>
-              </table>
-              
-              <div class="total-section">
-                <h3>Montant Total</h3>
-                <div class="total-amount">${formatCurrency(order.totalAmount)}</div>
-                <div class="payment-status status-${
-                  order.paymentStatus === "payé"
-                    ? "paid"
-                    : order.paymentStatus === "en attente"
-                    ? "pending"
-                    : "failed"
-                }">
-                  ${
-                    order.paymentStatus === "payé"
-                      ? "Payé"
-                      : order.paymentStatus === "en attente"
-                      ? "En attente"
-                      : "Échoué"
-                  }
-                </div>
-              </div>
-              
-              <div class="footer">
-                                  <div class="contact-info">
-                    <div class="contact-item">01 23 45 67 89</div>
-                    <div class="contact-item">contact@dsg-groceries.fr</div>
-                    <div class="contact-item">
-                      <a href="https://maps.google.com/?q=Paris,France" target="_blank" class="map-link">
-                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
-                          <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                        </svg>
-                        Paris, France
-                      </a>
-                    </div>
-                  </div>
-              </div>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-
-      // Create a new window for printing
-      const printWindow = window.open("", "_blank");
-      if (printWindow) {
-        printWindow.document.write(invoiceContent);
-        printWindow.document.close();
-        printWindow.focus();
-
-        // Wait for content to load then print
-        setTimeout(() => {
-          printWindow.print();
-          printWindow.close();
-        }, 500);
+  // Print invoice handler
+  const handlePrintInvoice = async (order: Order, printerType?: 'big' | 'small') => {
+    if (printerType === 'small') {
+      setInvoiceError(null);
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
+        const res = await fetch(`${API_BASE_URL}/api/orders/${order.id}/invoice`, {
+          credentials: 'include',
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error('Erreur lors de la récupération de la facture');
+        const data = await res.json();
+        
+        // Print directly to thermal printer
+        await printThermalInvoice(data);
+        
+      } catch (err: any) {
+        setInvoiceError(err.message || 'Erreur inconnue');
+      } finally {
+        // setInvoiceLoading(false); // Removed as per edit hint
       }
+      return;
+    }
+    
+    // For big printer - use standard printer formatting
+    if (printerType === 'big') {
+      setInvoiceError(null);
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
+        const res = await fetch(`${API_BASE_URL}/api/orders/${order.id}/invoice`, {
+          credentials: 'include',
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error('Erreur lors de la récupération de la facture');
+        const data = await res.json();
+        
+        // Print with standard printer formatting
+        await printToBrowser(data, 'standard');
+        
+      } catch (err: any) {
+        setInvoiceError(err.message || 'Erreur inconnue');
+      } finally {
+        // setInvoiceLoading(false); // Removed as per edit hint
+      }
+      return;
+    }
+  };
+
+  // Handle thermal printer print
+  const printThermalInvoice = async (invoiceData: any) => {
+    try {
+      // Try to connect to real thermal printer first
+      const printer = new ThermalPrinter();
+      await printer.connect();
+      
+      if (printer.isConnected) {
+        // Real thermal printer connected
+        await printer.printInvoice(invoiceData);
+        await printer.disconnect();
+      } else {
+        // No thermal printer connected, offer browser printing
+        const useBrowserPrint = confirm(
+          'Aucune imprimante thermique connectée.\n\n' +
+          'Options:\n' +
+          '• Cliquez "OK" pour imprimer via le navigateur (test)\n' +
+          '• Cliquez "Annuler" pour voir les commandes ESC/POS dans la console'
+        );
+        
+        if (useBrowserPrint) {
+          await printToBrowser(invoiceData, 'thermal');
+        } else {
+          // Show ESC/POS commands in console for debugging
+          console.log('=== ESC/POS Commands for Thermal Printer ===');
+          console.log('Invoice Data:', invoiceData);
+          alert('Commandes ESC/POS affichées dans la console (F12)');
+        }
+      }
+      
     } catch (error) {
-      console.error("Error printing invoice:", error);
-      alert("Erreur lors de l'impression de la facture");
+      console.error('Erreur d\'impression:', error);
+      alert('Erreur lors de l\'impression thermique');
     }
   };
 
@@ -614,16 +360,44 @@ export default function AdminOrders() {
           />
         }
         renderExpandedContent={(row: Order) => (
-          <ExpandedRowActions
-            row={row}
-            resource={ordersResource}
-            onPrintInvoice={handlePrintInvoice}
-            onToggleStatus={handleToggleStatus}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            loading={isLoading}
-            onOrderStatusChange={(newStatus) => updateOrderInState(row.id, newStatus)}
-          />
+          <>
+            <ExpandedRowActions
+              row={row}
+              resource={ordersResource}
+              onToggleStatus={handleToggleStatus}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              loading={isLoading}
+              onOrderStatusChange={(newStatus) => updateOrderInState(row.id, newStatus)}
+              onPrintInvoice={handlePrintInvoice}
+            />
+            {/* Error Modal */}
+            {invoiceError && (
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                background: 'rgba(0,0,0,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+              }}>
+                <div style={{ background: '#fff', padding: 24, borderRadius: 8, minWidth: 320, maxWidth: 480 }}>
+                  <h2 style={{ marginBottom: 16 }}>Erreur</h2>
+                  <div style={{ color: 'red', marginBottom: 16 }}>{invoiceError}</div>
+                  <button
+                    style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#eee', cursor: 'pointer' }}
+                    onClick={() => { setInvoiceError(null); }}
+                  >
+                    Fermer
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
         onAddOrder={fetchAndSetOrders}
       />

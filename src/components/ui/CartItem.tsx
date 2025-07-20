@@ -85,7 +85,7 @@ export const CartItem: React.FC<CartItemProps> = ({ product, quantity }) => {
               className="text-xs sm:text-sm mb-2"
               style={{ color: currentTheme.text.secondary }}
             >
-              {product.category?.name}
+              {product.category ? (typeof product.category === 'string' ? product.category : product.category.name) : ''}
             </p>
           </div>
           

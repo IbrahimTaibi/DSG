@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     domains: [
       "via.placeholder.com",
       "images.unsplash.com",
+      "res.cloudinary.com",
     ],
   },
 };

@@ -37,11 +37,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
       role={onClick ? 'button' : 'link'}
     >
       {/* Image */}
-      <div className="relative w-full flex items-center justify-center" style={{ height: 200, background: currentTheme.background.secondary }}>
+      <div className="relative w-full flex items-center justify-center overflow-hidden" style={{ height: 200, background: currentTheme.background.secondary }}>
         <Image
           src={product.image || PLACEHOLDER_IMAGE}
           alt={product.name}
-          className="object-contain w-full h-full transition-transform duration-300 group-hover:scale-105"
+          className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
           style={{ width: '100%', height: 200, display: 'block' }}
           width={400}
           height={200}
@@ -55,9 +55,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
           {product.name}
         </h3>
         {/* Category */}
-        {product.category?.name && (
+        {product.category && (
           <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium mb-1" style={{ background: currentTheme.background.secondary, color: currentTheme.text.muted }}>
-            {product.category.name}
+            {typeof product.category === 'string' ? product.category : product.category.name}
           </span>
         )}
         {/* Rating */}

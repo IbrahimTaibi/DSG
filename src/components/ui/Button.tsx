@@ -1,4 +1,5 @@
 import React from "react";
+import { useDarkMode } from "@/contexts/DarkModeContext";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
@@ -16,16 +17,34 @@ const Button: React.FC<ButtonProps> = ({
   size = 'md',
   ...props
 }) => {
-  const getVariantClasses = () => {
+  const { currentTheme } = useDarkMode();
+
+  const getVariantStyles = () => {
     switch (variant) {
       case 'primary':
-        return 'bg-blue-600 hover:bg-blue-700 text-white';
+        return {
+          background: currentTheme.interactive.primary,
+          color: currentTheme.text.inverse,
+          border: `1.5px solid ${currentTheme.interactive.primary}`,
+        };
       case 'secondary':
-        return 'bg-gray-600 hover:bg-gray-700 text-white';
+        return {
+          background: currentTheme.background.secondary,
+          color: currentTheme.text.primary,
+          border: `1.5px solid ${currentTheme.border.primary}`,
+        };
       case 'outline':
-        return 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800';
+        return {
+          background: 'transparent',
+          color: currentTheme.text.primary,
+          border: `1.5px solid ${currentTheme.border.primary}`,
+        };
       default:
-        return 'bg-blue-600 hover:bg-blue-700 text-white';
+        return {
+          background: currentTheme.interactive.primary,
+          color: currentTheme.text.inverse,
+          border: `1.5px solid ${currentTheme.interactive.primary}`,
+        };
     }
   };
 
@@ -44,9 +63,20 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
-      className={`rounded-lg font-medium transition-all duration-200 ${getVariantClasses()} ${getSizeClasses()} ${className}`}
-      style={style}
-      {...props}>
+      className={`rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${getSizeClasses()} ${className}`}
+      style={{ ...getVariantStyles(), ...style }}
+      {...props}
+      onMouseOver={e => {
+        if (variant === 'primary') e.currentTarget.style.background = currentTheme.interactive.primaryHover;
+        if (variant === 'secondary') e.currentTarget.style.background = currentTheme.background.card;
+        if (variant === 'outline') e.currentTarget.style.background = currentTheme.background.secondary;
+      }}
+      onMouseOut={e => {
+        if (variant === 'primary') e.currentTarget.style.background = currentTheme.interactive.primary;
+        if (variant === 'secondary') e.currentTarget.style.background = currentTheme.background.secondary;
+        if (variant === 'outline') e.currentTarget.style.background = 'transparent';
+      }}
+    >
       {children}
     </button>
   );

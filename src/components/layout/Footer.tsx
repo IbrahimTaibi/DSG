@@ -1,5 +1,6 @@
 import React from "react";
 import { useDarkMode } from "@/contexts/DarkModeContext";
+import DSG_INFO from '@/config/dsgInfo';
 
 const footerLinks = [
   {
@@ -92,25 +93,22 @@ const Footer: React.FC = () => {
               <div>
                 <span>Email: </span>
                 <a
-                  href="mailto:contact@dsg.com"
+                  href={`mailto:${DSG_INFO.email}`}
                   className="hover:underline"
                   style={{ color: currentTheme.interactive.primary }}>
-                  contact@dsg.com
+                  {DSG_INFO.email}
                 </a>
               </div>
               <div>
-                <span>Support: </span>
-                <a
-                  href="#"
-                  className="hover:underline"
-                  style={{ color: currentTheme.interactive.primary }}>
-                  Live Chat
-                </a>
+                <span>Phone: </span>
+                <span style={{ color: currentTheme.text.secondary }}>
+                  {DSG_INFO.phone}
+                </span>
               </div>
               <div>
                 <span>Address: </span>
                 <span style={{ color: currentTheme.text.secondary }}>
-                  123 Service Lane, City, Country
+                  {DSG_INFO.address}
                 </span>
               </div>
             </div>

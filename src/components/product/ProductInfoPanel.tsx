@@ -23,8 +23,10 @@ export const ProductInfoPanel: React.FC<ProductInfoPanelProps> = ({ product, ave
       {product.price !== undefined && (
         <div className="text-2xl font-semibold" style={{ color: currentTheme.interactive.primary }}>{product.price} DT</div>
       )}
-      {product.category?.name && (
-        <span className="inline-block px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-200 text-xs font-semibold w-fit">{product.category.name}</span>
+      {product.category && (
+        <span className="inline-block px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-200 text-xs font-semibold w-fit">
+          {typeof product.category === 'string' ? product.category : product.category.name}
+        </span>
       )}
       <div className="flex items-center gap-2 mt-2">
         <ReviewStars value={averageRating} readOnly size={20} />

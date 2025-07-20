@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant Printer
+
+    User->>Frontend: Place Order
+    Frontend->>Backend: Send Order Data
+    Backend->>Backend: Store Order & Generate Invoice Data
+    Backend->>Frontend: Return Invoice Data (JSON/text)
+    Frontend->>Frontend: Format for Printer
+    Frontend->>Printer: Send to Bluetooth Printer
+    Note over Backend: Stores all invoices for records 

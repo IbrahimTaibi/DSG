@@ -89,7 +89,7 @@ export const fetchStoreStats = async (token: string): Promise<StoreStats> => {
       throw new Error('Failed to fetch store products');
     }
 
-    const products = await productsResponse.json();
+    let products = await productsResponse.json();
     
     // Ensure products is an array
     if (!Array.isArray(products)) {
@@ -100,7 +100,8 @@ export const fetchStoreStats = async (token: string): Promise<StoreStats> => {
         averageRating: 4.8,
       };
     }
-    
+    // Map _id to id for consistency
+    products = products.map((product: any) => ({ ...product, id: product._id || product.id }));
     const activeProducts = products.filter((product: Record<string, unknown>) => product.status === 'active').length;
 
     // Fetch orders for the store
@@ -201,8 +202,7 @@ export const fetchPlatformStats = async (): Promise<PlatformStats> => {
     if (!productsResponse.ok) {
       throw new Error('Failed to fetch products');
     }
-    const products = await productsResponse.json();
-    
+    let products = await productsResponse.json();
     // Ensure products is an array
     if (!Array.isArray(products)) {
       console.error('Products response is not an array:', products);
@@ -213,7 +213,8 @@ export const fetchPlatformStats = async (): Promise<PlatformStats> => {
         satisfiedCustomers: 0,
       };
     }
-    
+    // Map _id to id for consistency
+    products = products.map((product: any) => ({ ...product, id: product._id || product.id }));
     const totalProducts = products.length;
 
     // For now, we'll use some reasonable defaults for platform stats
